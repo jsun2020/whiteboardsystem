@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Whiteboard Scribe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+</head>
+<body class="theme-light">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-brand">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h1>Meeting Whiteboard Scribe</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost" onclick="toggleTheme()">
+                    <i class="fas fa-moon theme-toggle-icon"></i>
+                </button>
+                <button class="btn btn-ghost" onclick="showDashboard()">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </button>
+                <button class="btn btn-primary" onclick="createNewProject()">
+                    <i class="fas fa-plus"></i>
+                    New Project
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Welcome Section -->
+        <section class="welcome-section" id="welcomeSection">
+            <div class="welcome-container">
+                <div class="welcome-content">
+                    <h2>Transform Your Whiteboard Photos into Structured Digital Content</h2>
+                    <p>Upload whiteboard photos and automatically extract text, tables, action items, and diagrams using AI-powered analysis.</p>
+                    
+                    <!-- Upload Area -->
+                    <div class="upload-zone" id="uploadZone" 
+                         ondrop="handleDrop(event)" 
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFileSelect(event)">
+                        <div class="upload-content">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h3>Drag & drop your whiteboard photos</h3>
+                            <p>or <span class="upload-link" onclick="document.getElementById('fileInput').click()">browse files</span></p>
+                            <div class="upload-info">
+                                <span>Supports JPG, PNG, HEIC, WebP • Max 10MB per image • Up to 5 images</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Camera Capture Button -->
+                        <button class="btn btn-secondary capture-btn" onclick="captureFromCamera()">
+                            <i class="fas fa-camera"></i>
+                            Take Photo
+                        </button>
+                    </div>
+
+                    <!-- Quick Demo -->
+                    <div class="demo-section">
+                        <button class="btn btn-outline demo-btn" onclick="loadDemo()">
+                            <i class="fas fa-play-circle"></i>
+                            Try Demo
+                        </button>
+                        <span class="demo-text">See how it works with sample whiteboard</span>
+                    </div>
+                </div>
+                
+                <!-- Features Grid -->
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <h4>Smart Recognition</h4>
+                        <p>AI-powered text, table, and diagram extraction</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-export"></i>
+                        </div>
+                        <h4>Multiple Formats</h4>
+                        <p>Export to Markdown, PowerPoint, Mind Maps</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <h4>Action Items</h4>
+                        <p>Automatically detect and organize tasks</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-share-alt"></i>
+                        </div>
+                        <h4>Easy Sharing</h4>
+                        <p>Generate shareable links and collaborate</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Processing Section -->
+        <section class="processing-section" id="processingSection" style="display: none;">
+            <div class="processing-container">
+                <div class="processing-header">
+                    <h2>Processing Your Whiteboard</h2>
+                    <p class="processing-subtitle">Analyzing content with AI...</p>
+                </div>
+                
+                <div class="progress-steps">
+                    <div class="step" data-step="1">
+                        <div class="step-icon">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <span class="step-label">Uploading</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <span class="step-label">Enhancing</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <span class="step-label">Analyzing</span>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="step-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <span class="step-label">Structuring</span>
+                    </div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                
+                <div class="progress-info">
+                    <span id="progressText">Preparing for upload...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+
+                <div class="processing-images" id="processingImages">
+                    <!-- Dynamic image previews will be added here -->
+                </div>
+
+                <button class="btn btn-ghost cancel-btn" onclick="cancelProcessing()">
+                    Cancel
+                </button>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="results-container">
+                <div class="results-header">
+                    <h2 id="projectTitle">Whiteboard Analysis Complete</h2>
+                    <div class="results-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-file-alt"></i>
+                            <span id="sectionsCount">0 sections</span>
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-tasks"></i>
+                            <span id="actionItemsCount">0 action items</span>
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-table"></i>
+                            <span id="tablesCount">0 tables</span>
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span id="confidenceScore">0% confidence</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Split View -->
+                <div class="split-view">
+                    <!-- Original Images -->
+                    <div class="original-view">
+                        <div class="view-header">
+                            <h3>Original Images</h3>
+                            <div class="view-controls">
+                                <button class="btn btn-sm btn-ghost" onclick="toggleRegionOverlay()">
+                                    <i class="fas fa-layer-group"></i>
+                                    Regions
+                                </button>
+                                <button class="btn btn-sm btn-ghost" onclick="zoomImage()">
+                                    <i class="fas fa-search-plus"></i>
+                                    Zoom
+                                </button>
+                            </div>
+                        </div>
+                        <div class="images-carousel" id="imagesCarousel">
+                            <!-- Dynamic images will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Extracted Content -->
+                    <div class="extracted-view">
+                        <div class="view-header">
+                            <h3>Extracted Content</h3>
+                            <div class="view-controls">
+                                <button class="btn btn-sm btn-ghost" onclick="toggleEditMode()">
+                                    <i class="fas fa-edit"></i>
+                                    Edit
+                                </button>
+                                <button class="btn btn-sm btn-ghost" onclick="copyContent()">
+                                    <i class="fas fa-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="content-tabs">
+                            <button class="tab-btn active" onclick="switchTab('structured')">Structured</button>
+                            <button class="tab-btn" onclick="switchTab('raw')">Raw Text</button>
+                            <button class="tab-btn" onclick="switchTab('json')">JSON</button>
+                        </div>
+                        <div class="content-panel" id="contentPanel">
+                            <!-- Dynamic content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Bar -->
+                <div class="export-bar">
+                    <div class="export-options">
+                        <button class="export-btn" onclick="exportAs('markdown')">
+                            <i class="fab fa-markdown"></i>
+                            <span>Markdown</span>
+                        </button>
+                        <button class="export-btn" onclick="exportAs('pptx')">
+                            <i class="fas fa-file-powerpoint"></i>
+                            <span>PowerPoint</span>
+                        </button>
+                        <button class="export-btn" onclick="exportAs('mindmap')">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Mind Map</span>
+                        </button>
+                        <button class="export-btn" onclick="exportAs('notion')">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>Notion</span>
+                        </button>
+                        <button class="export-btn" onclick="exportAs('confluence')">
+                            <i class="fas fa-confluence"></i>
+                            <span>Confluence</span>
+                        </button>
+                    </div>
+                    <div class="share-actions">
+                        <button class="btn btn-outline" onclick="shareResults()">
+                            <i class="fas fa-share-alt"></i>
+                            Share
+                        </button>
+                        <button class="btn btn-primary" onclick="saveProject()">
+                            <i class="fas fa-save"></i>
+                            Save Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section class="dashboard-section" id="dashboardSection" style="display: none;">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <h2>Dashboard</h2>
+                    <button class="btn btn-ghost" onclick="hideDashboard()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalProjects">0</h3>
+                            <p>Total Projects</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalWhiteboards">0</h3>
+                            <p>Whiteboards Processed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalExports">0</h3>
+                            <p>Exports Generated</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="processingRate">0%</h3>
+                            <p>Success Rate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Projects -->
+                <div class="recent-projects">
+                    <h3>Recent Projects</h3>
+                    <div class="projects-list" id="recentProjectsList">
+                        <!-- Dynamic projects will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" id="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic modal content -->
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <!-- Dynamic modal footer -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer">
+        <!-- Dynamic toasts will be added here -->
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/export.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
+
+    <script>
+        // Initialize app on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            WhiteboardScribe.init();
+        });
+    </script>
+</body>
+</html>

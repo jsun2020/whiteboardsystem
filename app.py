@@ -1,0 +1,97 @@
+import os
+from flask import Flask, request, jsonify, render_template, send_file
+from flask_cors import CORS
+from config import config_by_name
+import redis
+from datetime import datetime
+from database import db, migrate
+
+def create_app(config_name=None):
+    if config_name is None:
+        config_name = os.environ.get('FLASK_ENV', 'default')
+    
+    app = Flask(__name__)
+    app.config.from_object(config_by_name[config_name])
+    
+    # Initialize extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
+    CORS(app, origins=app.config['CORS_ORIGINS'])
+    
+    # Create upload and export directories
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['EXPORT_FOLDER'], exist_ok=True)
+    
+    # Register blueprints
+    from api.upload import upload_bp
+    from api.process import process_bp
+    from api.export import export_bp
+    from api.workspace import workspace_bp
+    
+    app.register_blueprint(upload_bp, url_prefix='/api')
+    app.register_blueprint(process_bp, url_prefix='/api')
+    app.register_blueprint(export_bp, url_prefix='/api')
+    app.register_blueprint(workspace_bp, url_prefix='/api')
+    
+    # Main routes
+    @app.route('/')
+    def index():
+        return render_template('index.html')
+    
+    @app.route('/preview/<project_id>')
+    def preview(project_id):
+        return render_template('preview.html', project_id=project_id)
+    
+    @app.route('/share/<share_id>')
+    def share(share_id):
+        return render_template('share.html', share_id=share_id)
+    
+    @app.route('/health')
+    def health():
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'version': '1.0.0'
+        })
+    
+    @app.route('/uploads/<path:filename>')
+    def uploaded_file(filename):
+        """Serve uploaded files"""
+        import os
+        upload_folder = app.config['UPLOAD_FOLDER']
+        # Check both original and processed paths
+        file_path = os.path.join(upload_folder, 'original', filename)
+        if not os.path.exists(file_path):
+            file_path = os.path.join(upload_folder, 'processed', filename)
+        if not os.path.exists(file_path):
+            # Try without subfolder
+            file_path = os.path.join(upload_folder, filename)
+        
+        if os.path.exists(file_path):
+            return send_file(file_path)
+        else:
+            return jsonify({'error': 'File not found'}), 404
+
+    @app.route('/api/whiteboard/image/<whiteboard_id>')
+    def whiteboard_image(whiteboard_id):
+        """Serve whiteboard image by whiteboard ID"""
+        from models.whiteboard import Whiteboard
+        import os
+        
+        whiteboard = Whiteboard.query.get_or_404(whiteboard_id)
+        
+        # Use processed image if available, otherwise original
+        image_path = whiteboard.processed_path or whiteboard.original_path
+        
+        if image_path and os.path.exists(image_path):
+            return send_file(image_path)
+        else:
+            return jsonify({'error': 'Image not found'}), 404
+    
+    return app
+
+if __name__ == '__main__':
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, host='0.0.0.0', port=5000)

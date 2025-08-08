@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shared Whiteboard - Meeting Whiteboard Scribe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+    <meta name="robots" content="noindex, nofollow">
+</head>
+<body class="theme-light share-page">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-brand">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <h1>Meeting Whiteboard Scribe</h1>
+            </div>
+            <div class="header-actions">
+                <div class="share-badge">
+                    <i class="fas fa-share-alt"></i>
+                    <span>Shared Content</span>
+                </div>
+                <button class="btn btn-ghost" onclick="toggleTheme()">
+                    <i class="fas fa-moon theme-toggle-icon"></i>
+                </button>
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Create Your Own
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="share-container">
+            <!-- Shared Project Header -->
+            <div class="shared-header">
+                <div class="shared-info">
+                    <h1 id="projectTitle">Loading...</h1>
+                    <div class="shared-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span id="projectDate">--</span>
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-images"></i>
+                            <span id="whiteboardCount">-- whiteboards</span>
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-eye"></i>
+                            <span>Read-only</span>
+                        </span>
+                    </div>
+                    <p class="shared-description" id="projectDescription"></p>
+                </div>
+                <div class="shared-actions">
+                    <button class="btn btn-outline" onclick="copyShareLink()">
+                        <i class="fas fa-link"></i>
+                        Copy Link
+                    </button>
+                    <button class="btn btn-primary" onclick="createCopy()">
+                        <i class="fas fa-copy"></i>
+                        Make a Copy
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Display -->
+            <div class="shared-content">
+                <!-- Summary Card -->
+                <div class="summary-card">
+                    <h2>
+                        <i class="fas fa-summary"></i>
+                        Summary
+                    </h2>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="sectionsCount">0</span>
+                            <span class="stat-label">Sections</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="actionItemsCount">0</span>
+                            <span class="stat-label">Action Items</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="tablesCount">0</span>
+                            <span class="stat-label">Tables</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="keyPointsCount">0</span>
+                            <span class="stat-label">Key Points</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Tabs -->
+                <div class="content-tabs">
+                    <button class="tab-btn active" onclick="switchTab('structured')">
+                        <i class="fas fa-list"></i>
+                        Structured View
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('whiteboards')">
+                        <i class="fas fa-images"></i>
+                        Whiteboards
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('actions')">
+                        <i class="fas fa-tasks"></i>
+                        Action Items
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('export')">
+                        <i class="fas fa-download"></i>
+                        Export Options
+                    </button>
+                </div>
+
+                <!-- Tab Panels -->
+                <div class="tab-content">
+                    <!-- Structured Content -->
+                    <div class="tab-panel active" id="structuredPanel">
+                        <div class="content-viewer">
+                            <div id="structuredContent">
+                                <!-- Dynamic structured content -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Whiteboards -->
+                    <div class="tab-panel" id="whiteboardsPanel">
+                        <div class="whiteboards-gallery" id="whiteboardsGallery">
+                            <!-- Dynamic whiteboard images -->
+                        </div>
+                    </div>
+
+                    <!-- Action Items -->
+                    <div class="tab-panel" id="actionsPanel">
+                        <div class="actions-grid">
+                            <div class="priority-column" data-priority="high">
+                                <h3>
+                                    <span class="priority-indicator high"></span>
+                                    High Priority
+                                </h3>
+                                <div class="actions-list" id="highPriorityActions">
+                                    <!-- High priority actions -->
+                                </div>
+                            </div>
+                            <div class="priority-column" data-priority="medium">
+                                <h3>
+                                    <span class="priority-indicator medium"></span>
+                                    Medium Priority
+                                </h3>
+                                <div class="actions-list" id="mediumPriorityActions">
+                                    <!-- Medium priority actions -->
+                                </div>
+                            </div>
+                            <div class="priority-column" data-priority="low">
+                                <h3>
+                                    <span class="priority-indicator low"></span>
+                                    Low Priority
+                                </h3>
+                                <div class="actions-list" id="lowPriorityActions">
+                                    <!-- Low priority actions -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Export Options -->
+                    <div class="tab-panel" id="exportPanel">
+                        <div class="export-options-grid">
+                            <div class="export-option" onclick="exportShared('markdown')">
+                                <div class="export-icon">
+                                    <i class="fab fa-markdown"></i>
+                                </div>
+                                <h3>Markdown</h3>
+                                <p>Clean markdown with tables and task lists</p>
+                                <button class="btn btn-sm btn-outline">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </button>
+                            </div>
+                            <div class="export-option" onclick="exportShared('pptx')">
+                                <div class="export-icon">
+                                    <i class="fas fa-file-powerpoint"></i>
+                                </div>
+                                <h3>PowerPoint</h3>
+                                <p>Professional presentation slides</p>
+                                <button class="btn btn-sm btn-outline">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </button>
+                            </div>
+                            <div class="export-option" onclick="exportShared('mindmap')">
+                                <div class="export-icon">
+                                    <i class="fas fa-project-diagram"></i>
+                                </div>
+                                <h3>Mind Map</h3>
+                                <p>Interactive mind map visualization</p>
+                                <button class="btn btn-sm btn-outline">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </button>
+                            </div>
+                            <div class="export-option" onclick="exportShared('notion')">
+                                <div class="export-icon">
+                                    <i class="fas fa-sticky-note"></i>
+                                </div>
+                                <h3>Notion</h3>
+                                <p>Notion-compatible format</p>
+                                <button class="btn btn-sm btn-outline">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+                        <div class="export-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p>Downloads are generated on-demand and may take a few moments to prepare.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="cta-section">
+                <div class="cta-content">
+                    <h2>Create Your Own Whiteboard Analysis</h2>
+                    <p>Transform your whiteboard photos into structured digital content with AI-powered analysis.</p>
+                    <a href="/" class="btn btn-lg btn-primary">
+                        <i class="fas fa-upload"></i>
+                        Upload Your Whiteboard
+                    </a>
+                </div>
+                <div class="cta-features">
+                    <div class="feature-item">
+                        <i class="fas fa-brain"></i>
+                        <span>AI-Powered Analysis</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-file-export"></i>
+                        <span>Multiple Export Formats</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-share-alt"></i>
+                        <span>Easy Sharing</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-tasks"></i>
+                        <span>Action Item Detection</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading States -->
+    <div class="loading-state" id="loadingState">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading shared content...</p>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="errorState" style="display: none;">
+        <div class="error-content">
+            <i class="fas fa-link"></i>
+            <h3>Share Link Not Found</h3>
+            <p>This shared link may have expired or been removed.</p>
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i>
+                Go to Homepage
+            </a>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+        <div class="image-modal-content">
+            <button class="image-modal-close" onclick="closeImageModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="modalImage" src="" alt="Whiteboard">
+            <div class="image-modal-nav">
+                <button class="nav-btn prev" onclick="previousImage()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="nav-btn next" onclick="nextImage()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer">
+        <!-- Dynamic toasts -->
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Shared page functionality
+        class ShareApp {
+            constructor() {
+                this.shareId = '{{ share_id }}';
+                this.projectData = null;
+                this.currentImageIndex = 0;
+                this.images = [];
+            }
+
+            async init(shareId) {
+                this.shareId = shareId;
+                await this.loadSharedContent();
+            }
+
+            async loadSharedContent() {
+                try {
+                    showElement('loadingState');
+                    hideElement('errorState');
+
+                    const response = await fetch(`/api/share/${this.shareId}`);
+                    if (!response.ok) {
+                        throw new Error('Failed to load shared content');
+                    }
+
+                    this.projectData = await response.json();
+                    this.renderContent();
+
+                } catch (error) {
+                    console.error('Error loading shared content:', error);
+                    this.showError();
+                }
+            }
+
+            renderContent() {
+                hideElement('loadingState');
+                
+                // Update header
+                document.getElementById('projectTitle').textContent = this.projectData.title || 'Shared Whiteboard';
+                document.getElementById('projectDate').textContent = formatDate(this.projectData.created_at);
+                document.getElementById('whiteboardCount').textContent = `${this.projectData.whiteboards?.length || 0} whiteboards`;
+                
+                if (this.projectData.description) {
+                    document.getElementById('projectDescription').textContent = this.projectData.description;
+                }
+
+                // Update summary stats
+                this.updateSummaryStats();
+
+                // Render structured content
+                this.renderStructuredContent();
+
+                // Render whiteboards
+                this.renderWhiteboards();
+
+                // Render action items
+                this.renderActionItems();
+            }
+
+            updateSummaryStats() {
+                let sectionsCount = 0;
+                let actionItemsCount = 0;
+                let tablesCount = 0;
+                let keyPointsCount = 0;
+
+                this.projectData.whiteboards?.forEach(wb => {
+                    const content = wb.structured_content;
+                    if (content) {
+                        sectionsCount += content.sections?.length || 0;
+                        actionItemsCount += content.action_items?.length || 0;
+                        tablesCount += content.tables?.length || 0;
+                        keyPointsCount += content.key_points?.length || 0;
+                    }
+                });
+
+                document.getElementById('sectionsCount').textContent = sectionsCount;
+                document.getElementById('actionItemsCount').textContent = actionItemsCount;
+                document.getElementById('tablesCount').textContent = tablesCount;
+                document.getElementById('keyPointsCount').textContent = keyPointsCount;
+            }
+
+            renderStructuredContent() {
+                const container = document.getElementById('structuredContent');
+                container.innerHTML = '';
+
+                this.projectData.whiteboards?.forEach((wb, index) => {
+                    if (wb.structured_content) {
+                        const content = wb.structured_content;
+                        const section = document.createElement('div');
+                        section.className = 'content-section';
+                        section.innerHTML = this.formatStructuredContent(content, index);
+                        container.appendChild(section);
+                    }
+                });
+            }
+
+            formatStructuredContent(content, index) {
+                let html = '';
+
+                if (this.projectData.whiteboards.length > 1) {
+                    html += `<h2 class="whiteboard-title">Whiteboard ${index + 1}</h2>`;
+                }
+
+                // Sections
+                if (content.sections) {
+                    content.sections.forEach(section => {
+                        html += `
+                            <div class="content-block">
+                                <h3>${section.heading || 'Section'}</h3>
+                                ${section.content ? `<p>${section.content}</p>` : ''}
+                            </div>
+                        `;
+                    });
+                }
+
+                // Key Points
+                if (content.key_points && content.key_points.length > 0) {
+                    html += `
+                        <div class="content-block">
+                            <h3>Key Points</h3>
+                            <ul class="key-points-list">
+                                ${content.key_points.map(point => `<li>${point}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                // Tables
+                if (content.tables) {
+                    content.tables.forEach(table => {
+                        html += `
+                            <div class="content-block">
+                                <h3>${table.title || 'Table'}</h3>
+                                <div class="table-container">
+                                    <table>
+                                        ${table.headers ? `
+                                            <thead>
+                                                <tr>${table.headers.map(h => `<th>${h}</th>`).join('')}</tr>
+                                            </thead>
+                                        ` : ''}
+                                        ${table.rows ? `
+                                            <tbody>
+                                                ${table.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+                                            </tbody>
+                                        ` : ''}
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                return html;
+            }
+
+            renderWhiteboards() {
+                const container = document.getElementById('whiteboardsGallery');
+                container.innerHTML = '';
+
+                this.images = [];
+                this.projectData.whiteboards?.forEach((wb, index) => {
+                    // For demo purposes, we'll show placeholder images
+                    // In a real implementation, you'd get actual image URLs
+                    this.images.push(`/uploads/${wb.filename || 'placeholder.jpg'}`);
+                    
+                    const imageCard = document.createElement('div');
+                    imageCard.className = 'whiteboard-card';
+                    imageCard.innerHTML = `
+                        <div class="image-container" onclick="openImageModal(${index})">
+                            <img src="/uploads/${wb.filename || 'placeholder.jpg'}" alt="Whiteboard ${index + 1}" loading="lazy">
+                            <div class="image-overlay">
+                                <i class="fas fa-expand"></i>
+                            </div>
+                        </div>
+                        <div class="image-info">
+                            <h4>Whiteboard ${index + 1}</h4>
+                            <p class="image-status ${wb.processing_status}">${wb.processing_status}</p>
+                        </div>
+                    `;
+                    container.appendChild(imageCard);
+                });
+            }
+
+            renderActionItems() {
+                const highContainer = document.getElementById('highPriorityActions');
+                const mediumContainer = document.getElementById('mediumPriorityActions');
+                const lowContainer = document.getElementById('lowPriorityActions');
+
+                [highContainer, mediumContainer, lowContainer].forEach(c => c.innerHTML = '');
+
+                this.projectData.whiteboards?.forEach(wb => {
+                    if (wb.structured_content && wb.structured_content.action_items) {
+                        wb.structured_content.action_items.forEach(item => {
+                            const actionCard = document.createElement('div');
+                            actionCard.className = 'action-item';
+                            actionCard.innerHTML = `
+                                <div class="action-content">
+                                    <p>${item.task}</p>
+                                    ${item.assignee ? `<span class="assignee">@${item.assignee}</span>` : ''}
+                                </div>
+                                <div class="action-meta">
+                                    ${item.category ? `<span class="category">${item.category}</span>` : ''}
+                                    ${item.deadline ? `<span class="deadline"><i class="fas fa-clock"></i> ${item.deadline}</span>` : ''}
+                                </div>
+                            `;
+
+                            const priority = item.priority || 'medium';
+                            if (priority === 'high') {
+                                highContainer.appendChild(actionCard);
+                            } else if (priority === 'medium') {
+                                mediumContainer.appendChild(actionCard);
+                            } else {
+                                lowContainer.appendChild(actionCard);
+                            }
+                        });
+                    }
+                });
+            }
+
+            showError() {
+                hideElement('loadingState');
+                showElement('errorState');
+            }
+        }
+
+        // Global functions
+        function switchTab(tabName) {
+            // Remove active class from all tabs and panels
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding panel
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Panel').classList.add('active');
+        }
+
+        function copyShareLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                showToast('Share link copied to clipboard', 'success');
+            });
+        }
+
+        function createCopy() {
+            // Redirect to main app to create a copy
+            window.location.href = '/?copy=' + shareApp.shareId;
+        }
+
+        function exportShared(format) {
+            // Trigger export download
+            window.location.href = `/api/export?project_id=${shareApp.projectData.id}&format=${format}`;
+        }
+
+        function openImageModal(index) {
+            shareApp.currentImageIndex = index;
+            document.getElementById('modalImage').src = shareApp.images[index];
+            showElement('imageModal');
+        }
+
+        function closeImageModal() {
+            hideElement('imageModal');
+        }
+
+        function previousImage() {
+            if (shareApp.currentImageIndex > 0) {
+                shareApp.currentImageIndex--;
+                document.getElementById('modalImage').src = shareApp.images[shareApp.currentImageIndex];
+            }
+        }
+
+        function nextImage() {
+            if (shareApp.currentImageIndex < shareApp.images.length - 1) {
+                shareApp.currentImageIndex++;
+                document.getElementById('modalImage').src = shareApp.images[shareApp.currentImageIndex];
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('theme-dark');
+            const icon = document.querySelector('.theme-toggle-icon');
+            icon.className = document.body.classList.contains('theme-dark') ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        // Initialize app
+        const shareApp = new ShareApp();
+        document.addEventListener('DOMContentLoaded', function() {
+            const shareId = '{{ share_id }}';
+            if (shareId && shareId !== 'None') {
+                shareApp.init(shareId);
+            } else {
+                shareApp.showError();
+            }
+        });
+    </script>
+</body>
+</html>

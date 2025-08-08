@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Preview - Meeting Whiteboard Scribe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+</head>
+<body class="theme-light preview-page">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-brand">
+                <a href="/" class="brand-link">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <h1>Meeting Whiteboard Scribe</h1>
+                </a>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost" onclick="toggleTheme()">
+                    <i class="fas fa-moon theme-toggle-icon"></i>
+                </button>
+                <button class="btn btn-ghost" onclick="goHome()">
+                    <i class="fas fa-home"></i>
+                    Home
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="preview-container">
+            <!-- Project Header -->
+            <div class="project-header">
+                <div class="project-info">
+                    <h1 id="projectTitle">Loading...</h1>
+                    <div class="project-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span id="projectDate">--</span>
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-images"></i>
+                            <span id="whiteboardCount">-- whiteboards</span>
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-tasks"></i>
+                            <span id="actionItemCount">-- action items</span>
+                        </span>
+                    </div>
+                    <p class="project-description" id="projectDescription"></p>
+                </div>
+                <div class="project-actions">
+                    <div class="export-dropdown">
+                        <button class="btn btn-primary dropdown-toggle" onclick="toggleExportDropdown()">
+                            <i class="fas fa-download"></i>
+                            Export
+                        </button>
+                        <div class="dropdown-menu" id="exportDropdown">
+                            <button class="dropdown-item" onclick="exportProject('markdown')">
+                                <i class="fab fa-markdown"></i>
+                                Markdown
+                            </button>
+                            <button class="dropdown-item" onclick="exportProject('pptx')">
+                                <i class="fas fa-file-powerpoint"></i>
+                                PowerPoint
+                            </button>
+                            <button class="dropdown-item" onclick="exportProject('mindmap')">
+                                <i class="fas fa-project-diagram"></i>
+                                Mind Map
+                            </button>
+                            <button class="dropdown-item" onclick="exportProject('notion')">
+                                <i class="fas fa-sticky-note"></i>
+                                Notion
+                            </button>
+                            <button class="dropdown-item" onclick="exportProject('confluence')">
+                                <i class="fas fa-confluence"></i>
+                                Confluence
+                            </button>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" onclick="shareProject()">
+                        <i class="fas fa-share-alt"></i>
+                        Share
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Tabs -->
+            <div class="content-tabs">
+                <button class="tab-btn active" onclick="switchTab('overview')">
+                    <i class="fas fa-eye"></i>
+                    Overview
+                </button>
+                <button class="tab-btn" onclick="switchTab('whiteboards')">
+                    <i class="fas fa-images"></i>
+                    Whiteboards
+                </button>
+                <button class="tab-btn" onclick="switchTab('content')">
+                    <i class="fas fa-file-alt"></i>
+                    Content
+                </button>
+                <button class="tab-btn" onclick="switchTab('actions')">
+                    <i class="fas fa-tasks"></i>
+                    Action Items
+                </button>
+                <button class="tab-btn" onclick="switchTab('exports')">
+                    <i class="fas fa-download"></i>
+                    Exports
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Overview Tab -->
+                <div class="tab-panel active" id="overviewPanel">
+                    <div class="overview-grid">
+                        <div class="overview-card">
+                            <h3>
+                                <i class="fas fa-lightbulb"></i>
+                                Key Insights
+                            </h3>
+                            <div class="insights-list" id="insightsList">
+                                <!-- Dynamic insights -->
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <h3>
+                                <i class="fas fa-chart-pie"></i>
+                                Statistics
+                            </h3>
+                            <div class="stats-list" id="statsContent">
+                                <!-- Dynamic statistics -->
+                            </div>
+                        </div>
+                        <div class="overview-card">
+                            <h3>
+                                <i class="fas fa-clock"></i>
+                                Recent Activity
+                            </h3>
+                            <div class="activity-list" id="activityList">
+                                <!-- Dynamic activity -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Whiteboards Tab -->
+                <div class="tab-panel" id="whiteboardsPanel">
+                    <div class="whiteboards-grid" id="whiteboardsGrid">
+                        <!-- Dynamic whiteboard cards -->
+                    </div>
+                </div>
+
+                <!-- Content Tab -->
+                <div class="tab-panel" id="contentPanel">
+                    <div class="content-viewer">
+                        <div class="content-toolbar">
+                            <div class="view-options">
+                                <button class="btn btn-sm btn-ghost active" onclick="setContentView('structured')">
+                                    <i class="fas fa-list"></i>
+                                    Structured
+                                </button>
+                                <button class="btn btn-sm btn-ghost" onclick="setContentView('raw')">
+                                    <i class="fas fa-align-left"></i>
+                                    Raw Text
+                                </button>
+                                <button class="btn btn-sm btn-ghost" onclick="setContentView('markdown')">
+                                    <i class="fab fa-markdown"></i>
+                                    Markdown
+                                </button>
+                            </div>
+                            <div class="content-actions">
+                                <button class="btn btn-sm btn-ghost" onclick="copyContent()">
+                                    <i class="fas fa-copy"></i>
+                                    Copy
+                                </button>
+                                <button class="btn btn-sm btn-ghost" onclick="downloadContent()">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+                        <div class="content-display" id="contentDisplay">
+                            <!-- Dynamic content display -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Items Tab -->
+                <div class="tab-panel" id="actionsPanel">
+                    <div class="actions-header">
+                        <div class="actions-filters">
+                            <button class="filter-btn active" onclick="filterActions('all')">
+                                All <span class="count" id="allCount">0</span>
+                            </button>
+                            <button class="filter-btn" onclick="filterActions('high')">
+                                High Priority <span class="count" id="highCount">0</span>
+                            </button>
+                            <button class="filter-btn" onclick="filterActions('medium')">
+                                Medium <span class="count" id="mediumCount">0</span>
+                            </button>
+                            <button class="filter-btn" onclick="filterActions('low')">
+                                Low Priority <span class="count" id="lowCount">0</span>
+                            </button>
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="exportActionItems()">
+                            <i class="fas fa-download"></i>
+                            Export Tasks
+                        </button>
+                    </div>
+                    <div class="actions-list" id="actionsList">
+                        <!-- Dynamic action items -->
+                    </div>
+                </div>
+
+                <!-- Exports Tab -->
+                <div class="tab-panel" id="exportsPanel">
+                    <div class="exports-header">
+                        <h3>Generated Exports</h3>
+                        <button class="btn btn-sm btn-primary" onclick="generateNewExport()">
+                            <i class="fas fa-plus"></i>
+                            New Export
+                        </button>
+                    </div>
+                    <div class="exports-list" id="exportsList">
+                        <!-- Dynamic exports list -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading States -->
+    <div class="loading-state" id="loadingState">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading project data...</p>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="errorState" style="display: none;">
+        <div class="error-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Project Not Found</h3>
+            <p>The requested project could not be found or may have been deleted.</p>
+            <button class="btn btn-primary" onclick="goHome()">
+                <i class="fas fa-home"></i>
+                Go Home
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" id="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamic modal content -->
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <!-- Dynamic modal footer -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer">
+        <!-- Dynamic toasts -->
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/export.js') }}"></script>
+
+    <script>
+        // Initialize preview page
+        document.addEventListener('DOMContentLoaded', function() {
+            const projectId = '{{ project_id }}';
+            if (projectId && projectId !== 'None') {
+                PreviewApp.init(projectId);
+            } else {
+                showError();
+            }
+        });
+    </script>
+</body>
+</html>

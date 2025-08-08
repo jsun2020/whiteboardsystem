@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # Main application
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://postgres:password@db:5432/whiteboard_db
+      - REDIS_URL=redis://redis:6379
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY:-your_api_key_here}
+      - DOUBAO_ENDPOINT=${DOUBAO_ENDPOINT:-https://ark.cn-beijing.volces.com/api/v3}
+      - DOUBAO_MODEL_ID=${DOUBAO_MODEL_ID:-doubao-seed-1-6-flash-250715}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-change-in-production}
+      - STORAGE_TYPE=local
+      - MAX_CONTENT_LENGTH=16777216
+    volumes:
+      - ./uploads:/app/uploads
+      - ./exports:/app/exports
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    networks:
+      - whiteboard-network
+
+  # PostgreSQL database
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=whiteboard_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - whiteboard-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and session storage
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - whiteboard-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # Nginx reverse proxy (optional, for production)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - whiteboard-network
+
+  # MinIO for S3-compatible storage (optional)
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - whiteboard-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  whiteboard-network:
+    driver: bridge
