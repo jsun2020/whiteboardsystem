@@ -8,7 +8,8 @@
       "Bash(timeout:*)",
       "Bash(git add:*)",
       "Bash(git init:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

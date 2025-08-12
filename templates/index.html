@@ -9,6 +9,27 @@
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+    <style>
+        .language-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .language-switcher:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .language-switcher .flag {
+            font-size: 16px;
+        }
+        .language-switcher .lang-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body class="theme-light">
     <!-- Header -->
@@ -16,19 +37,23 @@
         <div class="header-container">
             <div class="header-brand">
                 <i class="fas fa-chalkboard-teacher"></i>
-                <h1>Meeting Whiteboard Scribe</h1>
+                <h1 data-i18n="app.title">Meeting Whiteboard Scribe</h1>
             </div>
             <div class="header-actions">
+                <div class="language-switcher" id="languageSwitcher" onclick="i18n.toggleLanguage()" title="Switch Language">
+                    <span class="flag">🇨🇳</span>
+                    <span class="lang-text">中文</span>
+                </div>
                 <button class="btn btn-ghost" onclick="toggleTheme()">
                     <i class="fas fa-moon theme-toggle-icon"></i>
                 </button>
                 <button class="btn btn-ghost" onclick="showDashboard()">
                     <i class="fas fa-chart-line"></i>
-                    Dashboard
+                    <span data-i18n="header.dashboard">Dashboard</span>
                 </button>
                 <button class="btn btn-primary" onclick="createNewProject()">
                     <i class="fas fa-plus"></i>
-                    New Project
+                    <span data-i18n="header.new_project">New Project</span>
                 </button>
             </div>
         </div>
@@ -40,8 +65,8 @@
         <section class="welcome-section" id="welcomeSection">
             <div class="welcome-container">
                 <div class="welcome-content">
-                    <h2>Transform Your Whiteboard Photos into Structured Digital Content</h2>
-                    <p>Upload whiteboard photos and automatically extract text, tables, action items, and diagrams using AI-powered analysis.</p>
+                    <h2 data-i18n="welcome.title">Transform Your Whiteboard Photos into Structured Digital Content</h2>
+                    <p data-i18n="welcome.subtitle">Upload whiteboard photos and automatically extract text, tables, action items, and diagrams using AI-powered analysis.</p>
                     
                     <!-- Upload Area -->
                     <div class="upload-zone" id="uploadZone" 
@@ -53,17 +78,17 @@
                             <div class="upload-icon">
                                 <i class="fas fa-cloud-upload-alt"></i>
                             </div>
-                            <h3>Drag & drop your whiteboard photos</h3>
-                            <p>or <span class="upload-link" onclick="document.getElementById('fileInput').click()">browse files</span></p>
+                            <h3 data-i18n="upload.drag_drop">Drag & drop your whiteboard photos</h3>
+                            <p><span data-i18n="upload.or">or</span> <span class="upload-link" onclick="document.getElementById('fileInput').click()" data-i18n="upload.browse">browse files</span></p>
                             <div class="upload-info">
-                                <span>Supports JPG, PNG, HEIC, WebP • Max 10MB per image • Up to 5 images</span>
+                                <span data-i18n="upload.supported_formats">Supports JPG, PNG, HEIC, WebP • Max 10MB per image • Up to 5 images</span>
                             </div>
                         </div>
                         
                         <!-- Camera Capture Button -->
                         <button class="btn btn-secondary capture-btn" onclick="captureFromCamera()">
                             <i class="fas fa-camera"></i>
-                            Take Photo
+                            <span data-i18n="upload.take_photo">Take Photo</span>
                         </button>
                     </div>
 
@@ -71,9 +96,9 @@
                     <div class="demo-section">
                         <button class="btn btn-outline demo-btn" onclick="loadDemo()">
                             <i class="fas fa-play-circle"></i>
-                            Try Demo
+                            <span data-i18n="demo.try">Try Demo</span>
                         </button>
-                        <span class="demo-text">See how it works with sample whiteboard</span>
+                        <span class="demo-text" data-i18n="demo.description">See how it works with sample whiteboard</span>
                     </div>
                 </div>
                 
@@ -83,29 +108,29 @@
                         <div class="feature-icon">
                             <i class="fas fa-eye"></i>
                         </div>
-                        <h4>Smart Recognition</h4>
-                        <p>AI-powered text, table, and diagram extraction</p>
+                        <h4 data-i18n="feature.smart_recognition.title">Smart Recognition</h4>
+                        <p data-i18n="feature.smart_recognition.desc">AI-powered text, table, and diagram extraction</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">
                             <i class="fas fa-file-export"></i>
                         </div>
-                        <h4>Multiple Formats</h4>
-                        <p>Export to Markdown, PowerPoint, Mind Maps</p>
+                        <h4 data-i18n="feature.multiple_formats.title">Multiple Formats</h4>
+                        <p data-i18n="feature.multiple_formats.desc">Export to Markdown, PowerPoint, Mind Maps</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">
                             <i class="fas fa-tasks"></i>
                         </div>
-                        <h4>Action Items</h4>
-                        <p>Automatically detect and organize tasks</p>
+                        <h4 data-i18n="feature.action_items.title">Action Items</h4>
+                        <p data-i18n="feature.action_items.desc">Automatically detect and organize tasks</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">
                             <i class="fas fa-share-alt"></i>
                         </div>
-                        <h4>Easy Sharing</h4>
-                        <p>Generate shareable links and collaborate</p>
+                        <h4 data-i18n="feature.easy_sharing.title">Easy Sharing</h4>
+                        <p data-i18n="feature.easy_sharing.desc">Generate shareable links and collaborate</p>
                     </div>
                 </div>
             </div>
@@ -115,8 +140,8 @@
         <section class="processing-section" id="processingSection" style="display: none;">
             <div class="processing-container">
                 <div class="processing-header">
-                    <h2>Processing Your Whiteboard</h2>
-                    <p class="processing-subtitle">Analyzing content with AI...</p>
+                    <h2 data-i18n="processing.title">Processing Your Whiteboard</h2>
+                    <p class="processing-subtitle" data-i18n="processing.subtitle">Analyzing content with AI...</p>
                 </div>
                 
                 <div class="progress-steps">
@@ -124,25 +149,25 @@
                         <div class="step-icon">
                             <i class="fas fa-upload"></i>
                         </div>
-                        <span class="step-label">Uploading</span>
+                        <span class="step-label" data-i18n="processing.uploading">Uploading</span>
                     </div>
                     <div class="step" data-step="2">
                         <div class="step-icon">
                             <i class="fas fa-magic"></i>
                         </div>
-                        <span class="step-label">Enhancing</span>
+                        <span class="step-label" data-i18n="processing.enhancing">Enhancing</span>
                     </div>
                     <div class="step" data-step="3">
                         <div class="step-icon">
                             <i class="fas fa-brain"></i>
                         </div>
-                        <span class="step-label">Analyzing</span>
+                        <span class="step-label" data-i18n="processing.analyzing">Analyzing</span>
                     </div>
                     <div class="step" data-step="4">
                         <div class="step-icon">
                             <i class="fas fa-project-diagram"></i>
                         </div>
-                        <span class="step-label">Structuring</span>
+                        <span class="step-label" data-i18n="processing.structuring">Structuring</span>
                     </div>
                 </div>
 
@@ -160,7 +185,7 @@
                 </div>
 
                 <button class="btn btn-ghost cancel-btn" onclick="cancelProcessing()">
-                    Cancel
+                    <span data-i18n="processing.cancel">Cancel</span>
                 </button>
             </div>
         </section>
@@ -169,23 +194,23 @@
         <section class="results-section" id="resultsSection" style="display: none;">
             <div class="results-container">
                 <div class="results-header">
-                    <h2 id="projectTitle">Whiteboard Analysis Complete</h2>
+                    <h2 id="projectTitle" data-i18n="results.title">Whiteboard Analysis Complete</h2>
                     <div class="results-stats">
                         <span class="stat-item">
                             <i class="fas fa-file-alt"></i>
-                            <span id="sectionsCount">0 sections</span>
+                            <span id="sectionsCount">0 <span data-i18n="results.sections">sections</span></span>
                         </span>
                         <span class="stat-item">
                             <i class="fas fa-tasks"></i>
-                            <span id="actionItemsCount">0 action items</span>
+                            <span id="actionItemsCount">0 <span data-i18n="results.action_items">action items</span></span>
                         </span>
                         <span class="stat-item">
                             <i class="fas fa-table"></i>
-                            <span id="tablesCount">0 tables</span>
+                            <span id="tablesCount">0 <span data-i18n="results.tables">tables</span></span>
                         </span>
                         <span class="stat-item">
                             <i class="fas fa-chart-line"></i>
-                            <span id="confidenceScore">0% confidence</span>
+                            <span id="confidenceScore">0% <span data-i18n="results.confidence">confidence</span></span>
                         </span>
                     </div>
                 </div>
@@ -195,15 +220,15 @@
                     <!-- Original Images -->
                     <div class="original-view">
                         <div class="view-header">
-                            <h3>Original Images</h3>
+                            <h3 data-i18n="results.original_images">Original Images</h3>
                             <div class="view-controls">
                                 <button class="btn btn-sm btn-ghost" onclick="toggleRegionOverlay()">
                                     <i class="fas fa-layer-group"></i>
-                                    Regions
+                                    <span data-i18n="results.regions">Regions</span>
                                 </button>
                                 <button class="btn btn-sm btn-ghost" onclick="zoomImage()">
                                     <i class="fas fa-search-plus"></i>
-                                    Zoom
+                                    <span data-i18n="results.zoom">Zoom</span>
                                 </button>
                             </div>
                         </div>
@@ -215,21 +240,21 @@
                     <!-- Extracted Content -->
                     <div class="extracted-view">
                         <div class="view-header">
-                            <h3>Extracted Content</h3>
+                            <h3 data-i18n="results.extracted_content">Extracted Content</h3>
                             <div class="view-controls">
                                 <button class="btn btn-sm btn-ghost" onclick="toggleEditMode()">
                                     <i class="fas fa-edit"></i>
-                                    Edit
+                                    <span data-i18n="results.edit">Edit</span>
                                 </button>
                                 <button class="btn btn-sm btn-ghost" onclick="copyContent()">
                                     <i class="fas fa-copy"></i>
-                                    Copy
+                                    <span data-i18n="results.copy">Copy</span>
                                 </button>
                             </div>
                         </div>
                         <div class="content-tabs">
-                            <button class="tab-btn active" onclick="switchTab('structured')">Structured</button>
-                            <button class="tab-btn" onclick="switchTab('raw')">Raw Text</button>
+                            <button class="tab-btn active" onclick="switchTab('structured')" data-i18n="results.structured">Structured</button>
+                            <button class="tab-btn" onclick="switchTab('raw')" data-i18n="results.raw_text">Raw Text</button>
                             <button class="tab-btn" onclick="switchTab('json')">JSON</button>
                         </div>
                         <div class="content-panel" id="contentPanel">
@@ -243,33 +268,33 @@
                     <div class="export-options">
                         <button class="export-btn" onclick="exportAs('markdown')">
                             <i class="fab fa-markdown"></i>
-                            <span>Markdown</span>
+                            <span data-i18n="export.markdown">Markdown</span>
                         </button>
                         <button class="export-btn" onclick="exportAs('pptx')">
                             <i class="fas fa-file-powerpoint"></i>
-                            <span>PowerPoint</span>
+                            <span data-i18n="export.powerpoint">PowerPoint</span>
                         </button>
                         <button class="export-btn" onclick="exportAs('mindmap')">
                             <i class="fas fa-project-diagram"></i>
-                            <span>Mind Map</span>
+                            <span data-i18n="export.mindmap">Mind Map</span>
                         </button>
                         <button class="export-btn" onclick="exportAs('notion')">
                             <i class="fas fa-sticky-note"></i>
-                            <span>Notion</span>
+                            <span data-i18n="export.notion">Notion</span>
                         </button>
                         <button class="export-btn" onclick="exportAs('confluence')">
                             <i class="fas fa-confluence"></i>
-                            <span>Confluence</span>
+                            <span data-i18n="export.confluence">Confluence</span>
                         </button>
                     </div>
                     <div class="share-actions">
                         <button class="btn btn-outline" onclick="shareResults()">
                             <i class="fas fa-share-alt"></i>
-                            Share
+                            <span data-i18n="export.share">Share</span>
                         </button>
                         <button class="btn btn-primary" onclick="saveProject()">
                             <i class="fas fa-save"></i>
-                            Save Project
+                            <span data-i18n="export.save_project">Save Project</span>
                         </button>
                     </div>
                 </div>
@@ -280,7 +305,7 @@
         <section class="dashboard-section" id="dashboardSection" style="display: none;">
             <div class="dashboard-container">
                 <div class="dashboard-header">
-                    <h2>Dashboard</h2>
+                    <h2 data-i18n="dashboard.title">Dashboard</h2>
                     <button class="btn btn-ghost" onclick="hideDashboard()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -294,7 +319,7 @@
                         </div>
                         <div class="stat-content">
                             <h3 id="totalProjects">0</h3>
-                            <p>Total Projects</p>
+                            <p data-i18n="dashboard.total_projects">Total Projects</p>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -303,7 +328,7 @@
                         </div>
                         <div class="stat-content">
                             <h3 id="totalWhiteboards">0</h3>
-                            <p>Whiteboards Processed</p>
+                            <p data-i18n="dashboard.whiteboards_processed">Whiteboards Processed</p>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -312,7 +337,7 @@
                         </div>
                         <div class="stat-content">
                             <h3 id="totalExports">0</h3>
-                            <p>Exports Generated</p>
+                            <p data-i18n="dashboard.exports_generated">Exports Generated</p>
                         </div>
                     </div>
                     <div class="stat-card">
@@ -321,14 +346,14 @@
                         </div>
                         <div class="stat-content">
                             <h3 id="processingRate">0%</h3>
-                            <p>Success Rate</p>
+                            <p data-i18n="dashboard.success_rate">Success Rate</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Recent Projects -->
                 <div class="recent-projects">
-                    <h3>Recent Projects</h3>
+                    <h3 data-i18n="dashboard.recent_projects">Recent Projects</h3>
                     <div class="projects-list" id="recentProjectsList">
                         <!-- Dynamic projects will be loaded here -->
                     </div>
@@ -364,11 +389,12 @@
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
         <div class="loading-spinner">
             <div class="spinner"></div>
-            <p>Processing...</p>
+            <p data-i18n="common.processing">Processing...</p>
         </div>
     </div>
 
     <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
     <script src="{{ url_for('static', filename='js/editor.js') }}"></script>

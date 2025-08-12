@@ -19,6 +19,27 @@ class WhiteboardScribe {
         this.setupEventListeners();
         this.loadDashboardData();
         this.restoreTheme();
+        this.initializeI18n();
+    }
+
+    initializeI18n() {
+        // Listen for language change events
+        document.addEventListener('languageChanged', (event) => {
+            // Update dynamic content that may not have been translated by the i18n system
+            this.updateDynamicContent();
+        });
+    }
+
+    updateDynamicContent() {
+        // Update any dynamically generated content with current language
+        // This method can be called when language changes
+        if (window.i18n) {
+            // Update progress text if processing
+            const progressText = document.getElementById('progressText');
+            if (progressText && progressText.textContent.includes('Preparing')) {
+                progressText.textContent = window.i18n.t('processing.preparing');
+            }
+        }
     }
 
     setupEventListeners() {

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>i18n Test</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 20px;
+            background-color: #f5f7fa;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .language-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            background-color: #f0f0f0;
+            margin-bottom: 20px;
+            width: fit-content;
+        }
+        .language-switcher:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .language-switcher .flag {
+            font-size: 16px;
+        }
+        .language-switcher .lang-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="language-switcher" id="languageSwitcher" onclick="i18n.toggleLanguage()" title="Switch Language">
+            <span class="flag">🇨🇳</span>
+            <span class="lang-text">中文</span>
+        </div>
+
+        <h1 data-i18n="app.title">Meeting Whiteboard Scribe</h1>
+
+        <div class="test-section">
+            <h2>Header Test</h2>
+            <p><span data-i18n="header.dashboard">Dashboard</span> | <span data-i18n="header.new_project">New Project</span></p>
+        </div>
+
+        <div class="test-section">
+            <h2>Welcome Section Test</h2>
+            <h3 data-i18n="welcome.title">Transform Your Whiteboard Photos into Structured Digital Content</h3>
+            <p data-i18n="welcome.subtitle">Upload whiteboard photos and automatically extract text, tables, action items, and diagrams using AI-powered analysis.</p>
+        </div>
+
+        <div class="test-section">
+            <h2>Upload Test</h2>
+            <p><span data-i18n="upload.drag_drop">Drag & drop your whiteboard photos</span></p>
+            <p><span data-i18n="upload.or">or</span> <span data-i18n="upload.browse">browse files</span></p>
+            <p><span data-i18n="upload.supported_formats">Supports JPG, PNG, HEIC, WebP • Max 10MB per image • Up to 5 images</span></p>
+        </div>
+
+        <div class="test-section">
+            <h2>Features Test</h2>
+            <div>
+                <h4 data-i18n="feature.smart_recognition.title">Smart Recognition</h4>
+                <p data-i18n="feature.smart_recognition.desc">AI-powered text, table, and diagram extraction</p>
+            </div>
+            <div>
+                <h4 data-i18n="feature.multiple_formats.title">Multiple Formats</h4>
+                <p data-i18n="feature.multiple_formats.desc">Export to Markdown, PowerPoint, Mind Maps</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Processing Test</h2>
+            <h3 data-i18n="processing.title">Processing Your Whiteboard</h3>
+            <p data-i18n="processing.subtitle">Analyzing content with AI...</p>
+        </div>
+
+        <div class="test-section">
+            <h2>Language Switch Test</h2>
+            <p>Current Language: <span id="currentLang">zh-CN</span></p>
+            <button onclick="testTranslation()">Test Translation Function</button>
+            <p id="testOutput">Test output will appear here</p>
+        </div>
+    </div>
+
+    <script src="static/js/i18n.js"></script>
+    <script>
+        function testTranslation() {
+            const output = document.getElementById('testOutput');
+            const currentLang = document.getElementById('currentLang');
+            
+            currentLang.textContent = i18n.getCurrentLanguage();
+            
+            output.innerHTML = `
+                <strong>Translation Test:</strong><br>
+                app.title: ${i18n.t('app.title')}<br>
+                welcome.title: ${i18n.t('welcome.title')}<br>
+                feature.smart_recognition.title: ${i18n.t('feature.smart_recognition.title')}<br>
+                processing.analyzing: ${i18n.t('processing.analyzing')}
+            `;
+        }
+
+        // Initialize and test on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            testTranslation();
+        });
+    </script>
+</body>
+</html>
