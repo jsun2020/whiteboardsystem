@@ -47,6 +47,34 @@
                 <button class="btn btn-ghost" onclick="toggleTheme()">
                     <i class="fas fa-moon theme-toggle-icon"></i>
                 </button>
+                
+                <!-- Authentication Section -->
+                <div id="authSection">
+                    <!-- Guest user buttons -->
+                    <div id="guestActions">
+                        <button class="btn btn-ghost" onclick="showLoginModal()">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span data-i18n="auth.login">Login</span>
+                        </button>
+                        <button class="btn btn-outline" onclick="showRegisterModal()">
+                            <i class="fas fa-user-plus"></i>
+                            <span data-i18n="auth.register">Register</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Authenticated user buttons -->
+                    <div id="userActions" style="display: none;">
+                        <button class="btn btn-ghost" onclick="showSettingsModal()">
+                            <i class="fas fa-cog"></i>
+                            <span data-i18n="auth.setting">setting</span>
+                        </button>
+                        <div class="usage-indicator" id="usageIndicator" title="Usage remaining">
+                            <i class="fas fa-chart-bar"></i>
+                            <span id="usageCount">10</span>
+                        </div>
+                    </div>
+                </div>
+                
                 <button class="btn btn-ghost" onclick="showDashboard()">
                     <i class="fas fa-chart-line"></i>
                     <span data-i18n="header.dashboard">Dashboard</span>
@@ -79,7 +107,7 @@
                                 <i class="fas fa-cloud-upload-alt"></i>
                             </div>
                             <h3 data-i18n="upload.drag_drop">Drag & drop your whiteboard photos</h3>
-                            <p><span data-i18n="upload.or">or</span> <span class="upload-link" onclick="document.getElementById('fileInput').click()" data-i18n="upload.browse">browse files</span></p>
+                            <p><span data-i18n="upload.or">or</span> <span class="upload-link" onclick="browseFiles()" data-i18n="upload.browse">browse files</span></p>
                             <div class="upload-info">
                                 <span data-i18n="upload.supported_formats">Supports JPG, PNG, HEIC, WebP • Max 10MB per image • Up to 5 images</span>
                             </div>
@@ -380,6 +408,116 @@
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModalOverlay" onclick="closeLoginModal()" style="display: none;">
+        <div class="modal auth-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 data-i18n="auth.login_title">Login to Your Account</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeLoginModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail" data-i18n="auth.email">Email</label>
+                        <input type="email" id="loginEmail" name="email" required 
+                               placeholder="Enter your email" data-i18n-placeholder="auth.email_placeholder">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword" data-i18n="auth.password">Password</label>
+                        <input type="password" id="loginPassword" name="password" required 
+                               placeholder="Enter your password" data-i18n-placeholder="auth.password_placeholder">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span data-i18n="auth.login">Login</span>
+                    </button>
+                </form>
+                <div class="auth-divider">
+                    <span data-i18n="auth.or">or</span>
+                </div>
+                <p class="auth-switch">
+                    <span data-i18n="auth.no_account">Don't have an account?</span>
+                    <a href="#" onclick="switchToRegister()" data-i18n="auth.register_here">Register here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal-overlay" id="registerModalOverlay" onclick="closeRegisterModal()" style="display: none;">
+        <div class="modal auth-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 data-i18n="auth.register_title">Create Your Account</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeRegisterModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="registerEmail" data-i18n="auth.email">Email</label>
+                        <input type="email" id="registerEmail" name="email" required 
+                               placeholder="Enter your email" data-i18n-placeholder="auth.email_placeholder">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerUsername" data-i18n="auth.username">Username</label>
+                        <input type="text" id="registerUsername" name="username" 
+                               placeholder="Choose a username" data-i18n-placeholder="auth.username_placeholder">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerDisplayName" data-i18n="auth.display_name">Display Name</label>
+                        <input type="text" id="registerDisplayName" name="display_name" 
+                               placeholder="Your display name" data-i18n-placeholder="auth.display_name_placeholder">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword" data-i18n="auth.password">Password</label>
+                        <input type="password" id="registerPassword" name="password" required 
+                               placeholder="Create a password" data-i18n-placeholder="auth.new_password_placeholder">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword" data-i18n="auth.confirm_password">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirm_password" required 
+                               placeholder="Confirm your password" data-i18n-placeholder="auth.confirm_password_placeholder">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full" id="registerBtn">
+                        <i class="fas fa-user-plus"></i>
+                        <span data-i18n="auth.create_account">Create Account</span>
+                    </button>
+                </form>
+                <div class="auth-divider">
+                    <span data-i18n="auth.or">or</span>
+                </div>
+                <p class="auth-switch">
+                    <span data-i18n="auth.have_account">Already have an account?</span>
+                    <a href="#" onclick="switchToLogin()" data-i18n="auth.login_here">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Menu Dropdown -->
+    <div class="dropdown-menu" id="userMenuDropdown" style="display: none;">
+        <div class="dropdown-item" onclick="showProfileModal()">
+            <i class="fas fa-user"></i>
+            <span data-i18n="user.profile">Profile</span>
+        </div>
+        <div class="dropdown-item" onclick="showUsageModal()">
+            <i class="fas fa-chart-bar"></i>
+            <span data-i18n="user.usage">Usage & Billing</span>
+        </div>
+        <div class="dropdown-item" onclick="showSettingsModal()">
+            <i class="fas fa-cog"></i>
+            <span data-i18n="user.settings">Settings</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item" onclick="handleLogout()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span data-i18n="auth.logout">Logout</span>
+        </div>
+    </div>
+
     <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer">
         <!-- Dynamic toasts will be added here -->
@@ -395,6 +533,7 @@
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
     <script src="{{ url_for('static', filename='js/editor.js') }}"></script>

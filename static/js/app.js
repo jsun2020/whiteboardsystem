@@ -605,6 +605,15 @@ class WhiteboardScribe {
 }
 
 // Global functions for UI interactions
+// Authentication check helper
+function requireAuth(callback) {
+    if (!window.authManager.isAuthenticated()) {
+        showLoginModal();
+        return false;
+    }
+    return callback();
+}
+
 function handleDrop(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -612,12 +621,14 @@ function handleDrop(e) {
     const uploadZone = document.getElementById('uploadZone');
     uploadZone.classList.remove('drag-over');
     
-    const files = Array.from(e.dataTransfer.files);
-    const imageFiles = files.filter(f => f.type.startsWith('image/'));
-    
-    if (imageFiles.length > 0) {
-        window.app.uploadFiles(imageFiles);
-    }
+    requireAuth(() => {
+        const files = Array.from(e.dataTransfer.files);
+        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+        
+        if (imageFiles.length > 0) {
+            window.app.uploadFiles(imageFiles);
+        }
+    });
 }
 
 function handleDragOver(e) {
@@ -633,26 +644,40 @@ function handleDragLeave(e) {
 }
 
 function handleFileSelect(e) {
-    window.app.handleFileSelect(e);
+    requireAuth(() => {
+        window.app.handleFileSelect(e);
+    });
 }
 
 function captureFromCamera() {
-    // For now, just trigger file input with camera capture
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'camera';
-    input.onchange = (e) => window.app.handleFileSelect(e);
-    input.click();
+    requireAuth(() => {
+        // For now, just trigger file input with camera capture
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'camera';
+        input.onchange = (e) => window.app.handleFileSelect(e);
+        input.click();
+    });
 }
 
 function loadDemo() {
-    showToast('Demo feature coming soon!', 'info');
-    // TODO: Implement demo functionality
+    requireAuth(() => {
+        showToast('Demo feature coming soon!', 'info');
+        // TODO: Implement demo functionality
+    });
 }
 
 function createNewProject() {
-    window.location.reload();
+    requireAuth(() => {
+        window.location.reload();
+    });
+}
+
+function browseFiles() {
+    requireAuth(() => {
+        document.getElementById('fileInput').click();
+    });
 }
 
 function toggleTheme() {
@@ -662,11 +687,13 @@ function toggleTheme() {
 }
 
 function showDashboard() {
-    hideElement('welcomeSection');
-    hideElement('processingSection');
-    hideElement('resultsSection');
-    showElement('dashboardSection');
-    window.app.loadDashboardData();
+    requireAuth(() => {
+        hideElement('welcomeSection');
+        hideElement('processingSection');
+        hideElement('resultsSection');
+        showElement('dashboardSection');
+        window.app.loadDashboardData();
+    });
 }
 
 function hideDashboard() {

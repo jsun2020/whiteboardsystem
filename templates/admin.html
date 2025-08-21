@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Meeting Whiteboard Scribe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-6);
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: var(--space-8);
+            padding-bottom: var(--space-4);
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-8);
+        }
+        
+        .stat-card {
+            background: var(--surface);
+            padding: var(--space-6);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--space-3);
+            color: white;
+            font-size: 20px;
+        }
+        
+        .stat-value {
+            font-size: var(--font-size-3xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-1);
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+        
+        .users-table {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        
+        .table-header {
+            background: var(--surface-secondary);
+            padding: var(--space-4);
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .search-box input {
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: var(--font-size-sm);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            text-align: left;
+            padding: var(--space-3) var(--space-4);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--surface-secondary);
+        }
+        
+        .user-status {
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius);
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+        
+        .status-expired {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+        
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: var(--space-1);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-4);
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body class="theme-light">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-brand">
+                <i class="fas fa-shield-alt"></i>
+                <h1>Admin Dashboard</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-ghost" onclick="toggleTheme()">
+                    <i class="fas fa-moon theme-toggle-icon"></i>
+                </button>
+                <button class="btn btn-outline" onclick="window.location.href='/'">
+                    <i class="fas fa-home"></i>
+                    <span>Back to App</span>
+                </button>
+                <button class="btn btn-ghost" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="admin-container">
+            <!-- Admin Header -->
+            <div class="admin-header">
+                <div>
+                    <h2>User Management</h2>
+                    <p>Manage user accounts, subscriptions, and payments</p>
+                </div>
+            </div>
+
+            <!-- Stats Overview -->
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-value" id="activeSubscriptions">0</div>
+                    <div class="stat-label">Active Subscriptions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-value" id="monthlyRevenue">¥0</div>
+                    <div class="stat-label">Monthly Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value" id="pendingPayments">0</div>
+                    <div class="stat-label">Pending Payments</div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="users-table">
+                <div class="table-header">
+                    <h3>User Accounts</h3>
+                    <div class="search-box">
+                        <input type="text" id="userSearch" placeholder="Search users..." 
+                               onchange="searchUsers()">
+                        <button class="btn btn-ghost" onclick="refreshUsers()">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Registration</th>
+                            <th>Usage</th>
+                            <th>Subscription</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
+                
+                <div class="pagination" id="usersPagination">
+                    <!-- Dynamic pagination will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- User Edit Modal -->
+    <div class="modal-overlay" id="userEditModalOverlay" onclick="closeUserEditModal()" style="display: none;">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Edit User Subscription</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeUserEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="userEditForm" onsubmit="updateUserSubscription(event)">
+                    <input type="hidden" id="editUserId" name="userId">
+                    
+                    <div class="form-group">
+                        <label for="subscriptionType">Subscription Type</label>
+                        <select id="subscriptionType" name="subscriptionType" class="form-control">
+                            <option value="free">Free</option>
+                            <option value="monthly">Monthly (¥16.5)</option>
+                            <option value="semi_annual">Semi-Annual (¥99)</option>
+                            <option value="annual">Annual (¥198)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="paymentStatus">Payment Status</label>
+                        <select id="paymentStatus" name="paymentStatus" class="form-control">
+                            <option value="none">None</option>
+                            <option value="pending">Pending</option>
+                            <option value="active">Active</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="activateSubscription" name="activateSubscription">
+                            Activate subscription immediately
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Update Subscription</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script>
+        // Admin-specific JavaScript
+        let currentUsersPage = 1;
+        let currentSearchQuery = '';
+
+        // Initialize admin dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check if user is admin
+            if (!authManager.user || !authManager.user.is_admin) {
+                alert('Access denied. Admin privileges required.');
+                window.location.href = '/';
+                return;
+            }
+            
+            await loadDashboardStats();
+            await loadUsers();
+        });
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/auth/admin/stats', {
+                    headers: authManager.getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('totalUsers').textContent = data.stats.total_users;
+                    document.getElementById('activeSubscriptions').textContent = data.stats.active_subscriptions;
+                    document.getElementById('monthlyRevenue').textContent = '¥' + data.stats.monthly_revenue;
+                    document.getElementById('pendingPayments').textContent = data.stats.pending_payments;
+                }
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
+
+        async function loadUsers(page = 1, search = '') {
+            try {
+                const url = new URL('/api/auth/admin/users', window.location.origin);
+                url.searchParams.set('page', page);
+                if (search) url.searchParams.set('search', search);
+
+                const response = await fetch(url, {
+                    headers: authManager.getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    renderUsersTable(data.users);
+                    renderPagination(data.pagination);
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                
+                const statusClass = user.payment_status === 'active' ? 'status-active' :
+                                  user.payment_status === 'pending' ? 'status-pending' : 'status-expired';
+                
+                tr.innerHTML = `
+                    <td>
+                        <div>
+                            <strong>${user.display_name || user.username || 'Unknown'}</strong>
+                            ${user.is_admin ? '<span class="badge badge-primary">Admin</span>' : ''}
+                        </div>
+                    </td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>${user.free_uses_count}/10 free uses</td>
+                    <td>
+                        <div>${user.subscription_type}</div>
+                        ${user.subscription_expires_at ? 
+                          '<small>Expires: ' + new Date(user.subscription_expires_at).toLocaleDateString() + '</small>' : 
+                          ''}
+                    </td>
+                    <td>
+                        <span class="user-status ${statusClass}">
+                            ${user.payment_status || 'free'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-outline" onclick="editUser('${user.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-ghost" onclick="viewUserDetails('${user.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderPagination(pagination) {
+            const container = document.getElementById('usersPagination');
+            container.innerHTML = '';
+
+            if (pagination.pages <= 1) return;
+
+            // Previous button
+            if (pagination.page > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'btn btn-ghost btn-sm';
+                prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+                prevBtn.onclick = () => loadUsers(pagination.page - 1, currentSearchQuery);
+                container.appendChild(prevBtn);
+            }
+
+            // Page numbers
+            for (let i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.pages, pagination.page + 2); i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn btn-sm ${i === pagination.page ? 'btn-primary' : 'btn-ghost'}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => loadUsers(i, currentSearchQuery);
+                container.appendChild(pageBtn);
+            }
+
+            // Next button
+            if (pagination.page < pagination.pages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn btn-ghost btn-sm';
+                nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                nextBtn.onclick = () => loadUsers(pagination.page + 1, currentSearchQuery);
+                container.appendChild(nextBtn);
+            }
+        }
+
+        function searchUsers() {
+            currentSearchQuery = document.getElementById('userSearch').value;
+            loadUsers(1, currentSearchQuery);
+        }
+
+        function refreshUsers() {
+            loadUsers(currentUsersPage, currentSearchQuery);
+        }
+
+        function editUser(userId) {
+            const user = findUserById(userId);
+            if (user) {
+                document.getElementById('editUserId').value = userId;
+                document.getElementById('subscriptionType').value = user.subscription_type;
+                document.getElementById('paymentStatus').value = user.payment_status;
+                document.getElementById('userEditModalOverlay').style.display = 'flex';
+            }
+        }
+
+        function closeUserEditModal() {
+            document.getElementById('userEditModalOverlay').style.display = 'none';
+            document.getElementById('userEditForm').reset();
+        }
+
+        async function updateUserSubscription(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const userId = formData.get('userId');
+            const data = {
+                subscription_type: formData.get('subscriptionType'),
+                payment_status: formData.get('paymentStatus'),
+                activate_subscription: formData.get('activateSubscription') === 'on'
+            };
+
+            try {
+                const response = await fetch(`/api/auth/admin/users/${userId}/subscription`, {
+                    method: 'PUT',
+                    headers: authManager.getAuthHeaders(),
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeUserEditModal();
+                    showToast('User subscription updated successfully', 'success');
+                    loadUsers(currentUsersPage, currentSearchQuery);
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Failed to update subscription', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating user subscription:', error);
+                showToast('Network error', 'error');
+            }
+        }
+
+        function findUserById(userId) {
+            // This would need to be implemented to find user in current data
+            // For now, we'll just show the modal
+            return { subscription_type: 'free', payment_status: 'none' };
+        }
+
+        function viewUserDetails(userId) {
+            // TODO: Implement user details modal
+            console.log('View user details:', userId);
+        }
+
+        // Toast notification function (simple implementation)
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                z-index: 10000;
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Theme toggle function
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.classList.contains('theme-dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            body.className = body.className.replace(/theme-\w+/, `theme-${newTheme}`);
+            
+            const icon = document.querySelector('.theme-toggle-icon');
+            icon.className = `fas fa-${newTheme === 'dark' ? 'sun' : 'moon'} theme-toggle-icon`;
+        }
+
+        function handleLogout() {
+            authManager.logout();
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

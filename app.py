@@ -27,11 +27,13 @@ def create_app(config_name=None):
     from api.process import process_bp
     from api.export import export_bp
     from api.workspace import workspace_bp
+    from api.auth import auth_bp
     
     app.register_blueprint(upload_bp, url_prefix='/api')
     app.register_blueprint(process_bp, url_prefix='/api')
     app.register_blueprint(export_bp, url_prefix='/api')
     app.register_blueprint(workspace_bp, url_prefix='/api')
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
     
     # Main routes
     @app.route('/')
@@ -45,6 +47,10 @@ def create_app(config_name=None):
     @app.route('/share/<share_id>')
     def share(share_id):
         return render_template('share.html', share_id=share_id)
+    
+    @app.route('/admin')
+    def admin_dashboard():
+        return render_template('admin.html')
     
     @app.route('/health')
     def health():

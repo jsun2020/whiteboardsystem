@@ -287,34 +287,54 @@ class ExportManager {
 // Global export manager instance
 window.exportManager = new ExportManager();
 
+// Authentication check helper for exports
+function requireAuthForExport(callback) {
+    if (!window.authManager.isAuthenticated()) {
+        showLoginModal();
+        return false;
+    }
+    return callback();
+}
+
 // Global functions for export functionality
 function exportAs(format, options = {}) {
-    window.exportManager.exportAs(format, null, options);
+    requireAuthForExport(() => {
+        window.exportManager.exportAs(format, null, options);
+    });
 }
 
 function exportWithOptions(format) {
-    window.exportManager.showExportOptions(format);
+    requireAuthForExport(() => {
+        window.exportManager.showExportOptions(format);
+    });
 }
 
 function submitExportOptions(format) {
-    const options = window.exportManager.getFormData();
-    window.exportManager.exportAs(format, null, options);
-    closeModal();
+    requireAuthForExport(() => {
+        const options = window.exportManager.getFormData();
+        window.exportManager.exportAs(format, null, options);
+        closeModal();
+    });
 }
 
 function exportProject(format, projectId = null) {
-    window.exportManager.exportAs(format, projectId);
+    requireAuthForExport(() => {
+        window.exportManager.exportAs(format, projectId);
+    });
 }
 
 function exportShared(format, projectId) {
-    window.exportManager.exportAs(format, projectId);
+    requireAuthForExport(() => {
+        window.exportManager.exportAs(format, projectId);
+    });
 }
 
 function exportActionItems() {
-    if (!window.app?.currentProject) {
-        showToast('No project data available', 'error');
-        return;
-    }
+    requireAuthForExport(() => {
+        if (!window.app?.currentProject) {
+            showToast('No project data available', 'error');
+            return;
+        }
 
     // Create CSV content for action items
     let csvContent = "Task,Priority,Assignee,Category,Deadline\n";
@@ -333,12 +353,13 @@ function exportActionItems() {
         }
     });
 
-    // Create and download CSV file
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const filename = `action-items-${new Date().toISOString().split('T')[0]}.csv`;
-    window.exportManager.downloadBlob(blob, filename);
-    
-    showToast('Action items exported to CSV', 'success');
+        // Create and download CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const filename = `action-items-${new Date().toISOString().split('T')[0]}.csv`;
+        window.exportManager.downloadBlob(blob, filename);
+        
+        showToast('Action items exported to CSV', 'success');
+    });
 }
 
 function generateNewExport() {

@@ -86,6 +86,36 @@ class I18n {
                 'dashboard.success_rate': '成功率',
                 'dashboard.recent_projects': '最近项目',
                 
+                // Authentication
+                'auth.login': '登录',
+                'auth.register': '注册',
+                'auth.setting': '设置',
+                'auth.login_title': '登录您的账户',
+                'auth.register_title': '创建您的账户',
+                'auth.email': '邮箱',
+                'auth.username': '用户名',
+                'auth.display_name': '显示名称',
+                'auth.password': '密码',
+                'auth.confirm_password': '确认密码',
+                'auth.create_account': '创建账户',
+                'auth.or': '或',
+                'auth.no_account': '还没有账户？',
+                'auth.register_here': '在此注册',
+                'auth.have_account': '已有账户？',
+                'auth.login_here': '在此登录',
+                'auth.logout': '登出',
+                'auth.email_placeholder': '请输入您的邮箱',
+                'auth.password_placeholder': '请输入您的密码',
+                'auth.username_placeholder': '选择用户名',
+                'auth.display_name_placeholder': '您的显示名称',
+                'auth.new_password_placeholder': '创建密码',
+                'auth.confirm_password_placeholder': '确认您的密码',
+                
+                // User Menu
+                'user.profile': '个人资料',
+                'user.usage': '使用情况和计费',
+                'user.settings': '设置',
+
                 // Common
                 'common.loading': '加载中...',
                 'common.processing': '处理中...',
@@ -174,6 +204,36 @@ class I18n {
                 'dashboard.success_rate': 'Success Rate',
                 'dashboard.recent_projects': 'Recent Projects',
                 
+                // Authentication
+                'auth.login': 'login',
+                'auth.register': 'register',
+                'auth.setting': 'setting',
+                'auth.login_title': 'Login to Your Account',
+                'auth.register_title': 'Create Your Account',
+                'auth.email': 'Email',
+                'auth.username': 'Username',
+                'auth.display_name': 'Display Name',
+                'auth.password': 'Password',
+                'auth.confirm_password': 'Confirm Password',
+                'auth.create_account': 'Create Account',
+                'auth.or': 'or',
+                'auth.no_account': "Don't have an account?",
+                'auth.register_here': 'Register here',
+                'auth.have_account': 'Already have an account?',
+                'auth.login_here': 'Login here',
+                'auth.logout': 'Logout',
+                'auth.email_placeholder': 'Enter your email',
+                'auth.password_placeholder': 'Enter your password',
+                'auth.username_placeholder': 'Choose a username',
+                'auth.display_name_placeholder': 'Your display name',
+                'auth.new_password_placeholder': 'Create a password',
+                'auth.confirm_password_placeholder': 'Confirm your password',
+                
+                // User Menu
+                'user.profile': 'Profile',
+                'user.usage': 'Usage & Billing',
+                'user.settings': 'Settings',
+
                 // Common
                 'common.loading': 'Loading...',
                 'common.processing': 'Processing...',

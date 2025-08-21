@@ -1,0 +1,41 @@
+# Cloudflare Workers configuration
+name = "whiteboard-scribe"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables
+[env.production.vars]
+ENVIRONMENT = "production"
+
+# KV namespaces for storing data
+[[kv_namespaces]]
+binding = "SESSIONS"
+preview_id = "session-preview"
+id = "session-production"
+
+[[kv_namespaces]]
+binding = "CACHE"
+preview_id = "cache-preview"
+id = "cache-production"
+
+# R2 bucket for file storage
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "whiteboard-uploads"
+preview_bucket_name = "whiteboard-uploads-preview"
+
+# D1 database for user data
+[[d1_databases]]
+binding = "DB"
+database_name = "whiteboard-db"
+database_id = "your-database-id"
+
+# Build configuration
+[build]
+command = "npm run build"
+cwd = "frontend"
+
+# Routes
+routes = [
+  { pattern = "whiteboard-scribe.your-domain.workers.dev/*", zone_name = "your-domain.com" }
+]
