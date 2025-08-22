@@ -266,6 +266,23 @@ async function handleRegister(event) {
 function handleLogout() {
     authManager.logout();
     hideUserMenu();
+    
+    // Reset UI to welcome state
+    if (window.app) {
+        window.app.currentProject = null;
+        window.app.currentWhiteboards = [];
+    }
+    
+    // Show welcome section and hide other sections
+    const sections = ['dashboardSection', 'resultsSection', 'processingSection'];
+    sections.forEach(section => {
+        const element = document.getElementById(section);
+        if (element) element.style.display = 'none';
+    });
+    
+    const welcomeSection = document.getElementById('welcomeSection');
+    if (welcomeSection) welcomeSection.style.display = 'block';
+    
     showToast('Logged out successfully', 'success');
 }
 
