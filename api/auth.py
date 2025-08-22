@@ -39,70 +39,110 @@ def admin_required(f):
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        
+        if not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email and password required'}), 400
+        
+        # Check if user already exists
+        existing_user = User.query.filter_by(email=data['email']).first()
+        if existing_user:
+            return jsonify({'error': 'Email already registered'}), 400
+        
+        # Create new user
+        user = User()
+        user.email = data['email']
+        
+        # Handle username uniqueness
+        base_username = data.get('username', data['email'].split('@')[0])
+        username = base_username
+        counter = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+        
+        user.username = username
+        user.display_name = data.get('display_name', user.username)
+        user.set_password(data['password'])
+        user.session_token = str(uuid.uuid4())
+        user.preferred_language = data.get('language', 'en')
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Generate JWT token
+        try:
+            token = jwt.encode({
+                'user_id': user.id,
+                'exp': datetime.utcnow() + timedelta(days=30)
+            }, current_app.config['SECRET_KEY'], algorithm='HS256')
+        except Exception as jwt_error:
+            current_app.logger.error(f'JWT token generation error: {str(jwt_error)}')
+            # Fallback to simple session token
+            token = user.session_token
+        
+        return jsonify({
+            'success': True,
+            'message': 'Registration successful',
+            'token': token,
+            'user': user.to_dict()
+        })
     
-    if not data.get('email') or not data.get('password'):
-        return jsonify({'error': 'Email and password required'}), 400
-    
-    # Check if user already exists
-    existing_user = User.query.filter_by(email=data['email']).first()
-    if existing_user:
-        return jsonify({'error': 'Email already registered'}), 400
-    
-    # Create new user
-    user = User()
-    user.email = data['email']
-    user.username = data.get('username', data['email'].split('@')[0])
-    user.display_name = data.get('display_name', user.username)
-    user.set_password(data['password'])
-    user.session_token = str(uuid.uuid4())
-    user.preferred_language = data.get('language', 'en')
-    
-    db.session.add(user)
-    db.session.commit()
-    
-    # Generate JWT token
-    token = jwt.encode({
-        'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(days=30)
-    }, current_app.config['SECRET_KEY'])
-    
-    return jsonify({
-        'success': True,
-        'message': 'Registration successful',
-        'token': token,
-        'user': user.to_dict()
-    })
+    except Exception as e:
+        # Rollback any changes
+        db.session.rollback()
+        current_app.logger.error(f'Registration error: {str(e)}')
+        
+        # Return a specific error message
+        return jsonify({
+            'error': f'Registration failed: {str(e)}'
+        }), 500
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        
+        if not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email and password required'}), 400
+        
+        user = User.query.filter_by(email=data['email']).first()
+        
+        if not user or not user.check_password(data['password']):
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        if not user.is_active:
+            return jsonify({'error': 'Account is disabled'}), 401
+        
+        user.update_activity()
+        
+        # Generate JWT token
+        try:
+            token = jwt.encode({
+                'user_id': user.id,
+                'exp': datetime.utcnow() + timedelta(days=30)
+            }, current_app.config['SECRET_KEY'], algorithm='HS256')
+        except Exception as jwt_error:
+            current_app.logger.error(f'JWT token generation error: {str(jwt_error)}')
+            # Fallback to simple session token
+            token = user.session_token
+        
+        return jsonify({
+            'success': True,
+            'message': 'Login successful',
+            'token': token,
+            'user': user.to_dict()
+        })
     
-    if not data.get('email') or not data.get('password'):
-        return jsonify({'error': 'Email and password required'}), 400
-    
-    user = User.query.filter_by(email=data['email']).first()
-    
-    if not user or not user.check_password(data['password']):
-        return jsonify({'error': 'Invalid email or password'}), 401
-    
-    if not user.is_active:
-        return jsonify({'error': 'Account is disabled'}), 401
-    
-    user.update_activity()
-    
-    # Generate JWT token
-    token = jwt.encode({
-        'user_id': user.id,
-        'exp': datetime.utcnow() + timedelta(days=30)
-    }, current_app.config['SECRET_KEY'])
-    
-    return jsonify({
-        'success': True,
-        'message': 'Login successful',
-        'token': token,
-        'user': user.to_dict()
-    })
+    except Exception as e:
+        # Rollback any changes
+        db.session.rollback()
+        current_app.logger.error(f'Login error: {str(e)}')
+        
+        return jsonify({
+            'error': f'Login failed: {str(e)}'
+        }), 500
 
 @auth_bp.route('/logout', methods=['POST'])
 @login_required
