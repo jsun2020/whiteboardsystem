@@ -46,26 +46,31 @@ class AuthManager {
 
         if (this.user) {
             // Show user actions, hide guest actions
-            guestActions.style.display = 'none';
-            userActions.style.display = 'flex';
-            userDisplayName.textContent = this.user.display_name || this.user.username || 'User';
+            if (guestActions) guestActions.style.display = 'none';
+            if (userActions) userActions.style.display = 'flex';
+            if (userDisplayName) userDisplayName.textContent = this.user.display_name || this.user.username || 'User';
             
             // Update usage indicator
-            const remainingUses = Math.max(0, 10 - this.user.free_uses_count);
-            usageCount.textContent = this.user.can_use_service ? 
-                (this.user.subscription_type !== 'free' ? '∞' : remainingUses) : '0';
+            if (usageCount && this.user) {
+                const remainingUses = Math.max(0, 10 - (this.user.free_uses_count || 0));
+                usageCount.textContent = this.user.can_use_service ? 
+                    (this.user.subscription_type !== 'free' ? '∞' : remainingUses) : '0';
+            }
             
             // Add warning/danger classes based on usage
-            usageIndicator.className = 'usage-indicator';
-            if (!this.user.can_use_service) {
-                usageIndicator.classList.add('danger');
-            } else if (remainingUses <= 3 && this.user.subscription_type === 'free') {
-                usageIndicator.classList.add('warning');
+            if (usageIndicator && this.user) {
+                usageIndicator.className = 'usage-indicator';
+                const remainingUses = Math.max(0, 10 - (this.user.free_uses_count || 0));
+                if (!this.user.can_use_service) {
+                    usageIndicator.classList.add('danger');
+                } else if (remainingUses <= 3 && this.user.subscription_type === 'free') {
+                    usageIndicator.classList.add('warning');
+                }
             }
         } else {
             // Show guest actions, hide user actions
-            guestActions.style.display = 'flex';
-            userActions.style.display = 'none';
+            if (guestActions) guestActions.style.display = 'flex';
+            if (userActions) userActions.style.display = 'none';
         }
     }
 
@@ -197,11 +202,15 @@ async function handleLogin(event) {
     
     const result = await authManager.login(email, password);
     
-    if (result.success) {
-        closeLoginModal();
+    
+    if (result && result.success === true) {
+        // Use setTimeout to ensure modal closes properly
+        setTimeout(() => {
+            closeLoginModal();
+        }, 100);
         showToast('Login successful!', 'success');
     } else {
-        showToast(result.message, 'error');
+        showToast(result ? result.message : 'Login failed', 'error');
     }
     
     // Reset button state
@@ -235,14 +244,18 @@ async function handleRegister(event) {
         username: username || email.split('@')[0],
         display_name: displayName,
         password,
-        language: i18n.currentLanguage
+        language: (typeof i18n !== 'undefined' && i18n.currentLanguage) || 'en'
     });
     
-    if (result.success) {
-        closeRegisterModal();
+    
+    if (result && result.success === true) {
+        // Use setTimeout to ensure modal closes properly
+        setTimeout(() => {
+            closeRegisterModal();
+        }, 100);
         showToast('Account created successfully!', 'success');
     } else {
-        showToast(result.message, 'error');
+        showToast(result ? result.message : 'Registration failed', 'error');
     }
     
     // Reset button state

@@ -683,7 +683,18 @@ function loadDemo() {
 
 function createNewProject() {
     requireAuth(() => {
-        window.location.reload();
+        // Reset current project and show welcome section for new upload
+        window.app.currentProject = null;
+        window.app.currentWhiteboards = [];
+        
+        // Show welcome section (upload area)
+        hideElement('dashboardSection');
+        hideElement('resultsSection');
+        hideElement('processingSection');
+        showElement('welcomeSection');
+        
+        // Scroll to top
+        window.scrollTo(0, 0);
     });
 }
 
