@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from database import db
 import uuid
 
@@ -20,7 +20,7 @@ class Export(db.Model):
     error_message = db.Column(db.Text, nullable=True)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     completed_at = db.Column(db.DateTime, nullable=True)
     
     # Download tracking
@@ -44,12 +44,12 @@ class Export(db.Model):
     
     def mark_downloaded(self):
         self.download_count += 1
-        self.last_downloaded = datetime.utcnow()
+        self.last_downloaded = datetime.now(timezone.utc)()
         db.session.commit()
     
     def mark_completed(self):
         self.status = 'completed'
-        self.completed_at = datetime.utcnow()
+        self.completed_at = datetime.now(timezone.utc)()
         db.session.commit()
     
     def mark_error(self, error_message):

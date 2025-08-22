@@ -50,6 +50,11 @@ class AuthManager {
             if (userActions) userActions.style.display = 'flex';
             if (userDisplayName) userDisplayName.textContent = this.user.display_name || this.user.username || 'User';
             
+            // Show admin panel if user is admin
+            if (this.user.is_admin) {
+                this.showAdminAccess();
+            }
+            
             // Update usage indicator
             if (usageCount && this.user) {
                 const remainingUses = Math.max(0, 10 - (this.user.free_uses_count || 0));
@@ -141,6 +146,259 @@ class AuthManager {
 
     canUseService() {
         return !this.user || this.user.can_use_service;
+    }
+
+    isAdmin() {
+        return this.user && this.user.is_admin === true;
+    }
+
+    showAdminAccess() {
+        // Add admin button to header if not already present
+        const userActions = document.getElementById('userActions');
+        if (userActions && !document.getElementById('adminButton')) {
+            const adminButton = document.createElement('button');
+            adminButton.id = 'adminButton';
+            adminButton.className = 'btn btn-ghost admin-btn';
+            adminButton.title = 'Admin Panel';
+            adminButton.onclick = () => this.showAdminPanel();
+            adminButton.innerHTML = '<i class="fas fa-user-shield"></i> <span>Admin</span>';
+            
+            // Insert before logout button
+            const logoutButton = userActions.querySelector('button[onclick="handleLogout()"]');
+            userActions.insertBefore(adminButton, logoutButton);
+        }
+    }
+
+    async showAdminPanel() {
+        if (!this.isAdmin()) {
+            showToast('Access denied: Admin privileges required', 'error');
+            return;
+        }
+
+        try {
+            // Fetch admin stats
+            const response = await fetch('/api/auth/admin/stats', {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load admin data');
+            }
+
+            const data = await response.json();
+            
+            const modalBody = `
+                <div class="admin-panel">
+                    <div class="admin-stats">
+                        <h4><i class="fas fa-chart-bar"></i> System Statistics</h4>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Users:</span>
+                                <span class="stat-value">${data.stats.total_users}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Active Subscriptions:</span>
+                                <span class="stat-value">${data.stats.active_subscriptions}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Monthly Revenue:</span>
+                                <span class="stat-value">¥${data.stats.monthly_revenue}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Pending Payments:</span>
+                                <span class="stat-value">${data.stats.pending_payments}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-actions">
+                        <h4><i class="fas fa-tools"></i> Admin Actions</h4>
+                        <div class="action-buttons">
+                            <button class="btn btn-outline" onclick="authManager.showUserManagement()">
+                                <i class="fas fa-users"></i> Manage Users
+                            </button>
+                            <button class="btn btn-outline" onclick="authManager.showPaymentManagement()">
+                                <i class="fas fa-credit-card"></i> Payment Management
+                            </button>
+                            <button class="btn btn-outline" onclick="authManager.exportSystemData()">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            showModal('Admin Panel', modalBody);
+            
+        } catch (error) {
+            console.error('Admin panel error:', error);
+            showToast('Failed to load admin panel', 'error');
+        }
+    }
+
+    async showUserManagement() {
+        try {
+            const response = await fetch('/api/auth/admin/users', {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load users');
+            }
+
+            const data = await response.json();
+            
+            let usersList = '';
+            data.users.forEach(user => {
+                const subscriptionStatus = user.subscription_type === 'free' 
+                    ? `Free (${Math.max(0, 10 - user.free_uses_count)} uses left)`
+                    : `${user.subscription_type} (${user.payment_status})`;
+                    
+                usersList += `
+                    <div class="user-row">
+                        <div class="user-info">
+                            <strong>${user.display_name || user.username}</strong>
+                            <span class="email">${user.email}</span>
+                            <span class="subscription">${subscriptionStatus}</span>
+                        </div>
+                        <div class="user-actions">
+                            <button class="btn btn-sm btn-outline" onclick="authManager.editUserSubscription('${user.id}')">
+                                Edit Plan
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            const modalBody = `
+                <div class="user-management">
+                    <h4><i class="fas fa-users"></i> User Management</h4>
+                    <div class="users-list">
+                        ${usersList}
+                    </div>
+                </div>
+            `;
+            
+            showModal('User Management', modalBody);
+            
+        } catch (error) {
+            showToast('Failed to load users', 'error');
+        }
+    }
+
+    async editUserSubscription(userId) {
+        const modalBody = `
+            <div class="edit-subscription">
+                <h4>Edit User Subscription</h4>
+                <form onsubmit="authManager.updateUserSubscription('${userId}', event)">
+                    <div class="form-group">
+                        <label for="subscriptionType">Subscription Type:</label>
+                        <select id="subscriptionType" name="subscription_type">
+                            <option value="free">Free</option>
+                            <option value="monthly">Monthly (¥16.5)</option>
+                            <option value="semi_annual">Semi-Annual (¥99)</option>
+                            <option value="annual">Annual (¥198)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentStatus">Payment Status:</label>
+                        <select id="paymentStatus" name="payment_status">
+                            <option value="none">None</option>
+                            <option value="pending">Pending</option>
+                            <option value="active">Active</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="activateSubscription" name="activate_subscription">
+                            Activate subscription (set expiration date)
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Subscription</button>
+                </form>
+            </div>
+        `;
+        
+        showModal('Edit Subscription', modalBody);
+    }
+
+    async updateUserSubscription(userId, event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const data = {
+            subscription_type: formData.get('subscription_type'),
+            payment_status: formData.get('payment_status'),
+            activate_subscription: formData.get('activate_subscription') === 'on'
+        };
+
+        try {
+            const response = await fetch(`/api/auth/admin/users/${userId}/subscription`, {
+                method: 'PUT',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                showToast('User subscription updated successfully', 'success');
+                closeModal();
+                this.showUserManagement(); // Refresh list
+            } else {
+                throw new Error('Update failed');
+            }
+        } catch (error) {
+            showToast('Failed to update subscription', 'error');
+        }
+    }
+
+    showPaymentManagement() {
+        const modalBody = `
+            <div class="payment-management">
+                <h4><i class="fas fa-credit-card"></i> Payment Management</h4>
+                <div class="payment-info">
+                    <h5>Payment Collection QR Code</h5>
+                    <p>Users scan this QR code to make payments:</p>
+                    <div class="qr-container">
+                        <img src="/static/assets/images/payment-qr.png" alt="Payment QR Code" class="qr-code" style="max-width: 200px;">
+                    </div>
+                    <p class="note">
+                        <strong>Instructions for customers:</strong><br>
+                        1. Scan QR code with WeChat Pay or Alipay<br>
+                        2. Enter the amount for their chosen plan<br>
+                        3. Contact you with transaction ID<br>
+                        4. Use admin panel to activate their subscription
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        showModal('Payment Management', modalBody);
+    }
+
+    async exportSystemData() {
+        try {
+            const response = await fetch('/api/auth/admin/export', {
+                headers: this.getAuthHeaders()
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `system-data-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                showToast('System data exported successfully', 'success');
+            } else {
+                throw new Error('Export failed');
+            }
+        } catch (error) {
+            showToast('Failed to export system data', 'error');
+        }
     }
 
     getAuthHeaders() {

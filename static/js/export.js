@@ -18,7 +18,10 @@ class ExportManager {
             
             const response = await fetch('/api/export', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...window.authManager.getAuthHeaders()
+                },
                 body: JSON.stringify({
                     project_id: pid,
                     format: format,
@@ -47,7 +50,9 @@ class ExportManager {
 
     async downloadExport(exportId, filename) {
         try {
-            const response = await fetch(`/api/export/${exportId}/download`);
+            const response = await fetch(`/api/export/${exportId}/download`, {
+                headers: window.authManager.getAuthHeaders()
+            });
             
             if (!response.ok) {
                 throw new Error('Download failed');
@@ -110,7 +115,9 @@ class ExportManager {
 
     async showExportOptions(format) {
         try {
-            const response = await fetch('/api/export/formats');
+            const response = await fetch('/api/export/formats', {
+                headers: window.authManager.getAuthHeaders()
+            });
             const data = await response.json();
             
             const formatInfo = data.formats.find(f => f.id === format);
@@ -254,7 +261,9 @@ class ExportManager {
 
     async getProjectExports(projectId) {
         try {
-            const response = await fetch(`/api/exports/${projectId}`);
+            const response = await fetch(`/api/exports/${projectId}`, {
+                headers: window.authManager.getAuthHeaders()
+            });
             if (response.ok) {
                 return await response.json();
             }
@@ -268,7 +277,8 @@ class ExportManager {
     async deleteExport(exportId) {
         try {
             const response = await fetch(`/api/export/${exportId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: window.authManager.getAuthHeaders()
             });
 
             if (response.ok) {

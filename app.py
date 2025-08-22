@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
 from config import config_by_name
 import redis
-from datetime import datetime
+from datetime import datetime, timezone
 from database import db, migrate
 
 def create_app(config_name=None):
@@ -56,7 +56,7 @@ def create_app(config_name=None):
     def health():
         return jsonify({
             'status': 'healthy',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'version': '1.0.0'
         })
     

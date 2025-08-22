@@ -1,5 +1,258 @@
 /* UI Components */
 
+/* Usage Limit Modal */
+.usage-limit-modal {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.usage-limit-modal .limit-icon {
+    margin-bottom: var(--space-4);
+}
+
+.usage-limit-modal h3 {
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+    font-size: var(--font-size-2xl);
+}
+
+.usage-limit-modal > p {
+    margin-bottom: var(--space-6);
+    color: var(--text-secondary);
+    font-size: var(--font-size-lg);
+}
+
+.usage-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-6);
+}
+
+.option-card {
+    padding: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    transition: var(--transition);
+}
+
+.option-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.option-card.featured {
+    border-color: var(--primary);
+    position: relative;
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(99, 102, 241, 0.05) 100%);
+}
+
+.option-card.featured::before {
+    content: "Recommended";
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: white;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.option-card h4 {
+    margin-bottom: var(--space-2);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.option-card p {
+    margin-bottom: var(--space-4);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+}
+
+.pricing-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-4);
+}
+
+.pricing-preview .price {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.pricing-preview .savings {
+    font-size: var(--font-size-xs);
+    color: var(--text-tertiary);
+}
+
+@media (max-width: 768px) {
+    .usage-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Admin Panel */
+.admin-panel {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.admin-stats, .admin-actions, .user-management, .payment-management {
+    margin-bottom: var(--space-6);
+}
+
+.admin-stats h4, .admin-actions h4, .user-management h4, .payment-management h4 {
+    margin-bottom: var(--space-4);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-3);
+    background: var(--surface-secondary);
+    border-radius: var(--radius);
+}
+
+.stat-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: var(--font-size-lg);
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-3);
+}
+
+.action-buttons .btn {
+    justify-content: center;
+    padding: var(--space-3) var(--space-4);
+}
+
+/* User Management */
+.users-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.user-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.user-row:last-child {
+    border-bottom: none;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.user-info .email {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.user-info .subscription {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-xs);
+    background: var(--surface-secondary);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    width: fit-content;
+}
+
+.user-actions .btn {
+    font-size: var(--font-size-xs);
+}
+
+/* Admin Button */
+.admin-btn {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.admin-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Edit Subscription Form */
+.edit-subscription .form-group {
+    margin-bottom: var(--space-4);
+}
+
+.edit-subscription select {
+    width: 100%;
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+.edit-subscription label {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Payment Management */
+.payment-info {
+    text-align: center;
+}
+
+.payment-info .note {
+    background: var(--surface-secondary);
+    padding: var(--space-4);
+    border-radius: var(--radius);
+    margin-top: var(--space-4);
+    text-align: left;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
 /* Authentication Components */
 .auth-modal {
     width: 100%;

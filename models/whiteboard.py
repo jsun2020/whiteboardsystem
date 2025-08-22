@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from database import db
 import uuid
 import json
@@ -25,7 +25,7 @@ class Whiteboard(db.Model):
     confidence_score = db.Column(db.Float, nullable=True)
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     processed_at = db.Column(db.DateTime, nullable=True)
     
     def to_dict(self):
@@ -70,5 +70,5 @@ class Whiteboard(db.Model):
         if error_message is not None:
             self.error_message = error_message
         if status == 'completed':
-            self.processed_at = datetime.utcnow()
+            self.processed_at = datetime.now(timezone.utc)()
         db.session.commit()

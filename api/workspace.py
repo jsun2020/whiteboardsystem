@@ -4,20 +4,24 @@ from models.whiteboard import Whiteboard
 from models.export import Export
 from models.user import User
 from database import db
-from datetime import datetime, timedelta
+from api.auth import login_required
+from datetime import datetime, timedelta, timezone
 import uuid
 
 workspace_bp = Blueprint('workspace', __name__)
 
 @workspace_bp.route('/projects', methods=['GET'])
+@login_required
 def list_projects():
     try:
+        user = request.current_user
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         sort_by = request.args.get('sort_by', 'updated_at')
         order = request.args.get('order', 'desc')
         
-        query = Project.query
+        # Filter projects by current user
+        query = Project.query.filter_by(user_id=user.id)
         
         # Add sorting
         if sort_by == 'created_at':
@@ -58,14 +62,17 @@ def list_projects():
         return jsonify({'error': str(e)}), 500
 
 @workspace_bp.route('/projects', methods=['POST'])
+@login_required
 def create_project():
     try:
+        user = request.current_user
         data = request.get_json()
         
         project = Project(
             title=data.get('title', 'Untitled Project'),
             description=data.get('description', ''),
-            status='draft'
+            status='draft',
+            user_id=user.id
         )
         
         db.session.add(project)
@@ -80,9 +87,15 @@ def create_project():
         return jsonify({'error': str(e)}), 500
 
 @workspace_bp.route('/projects/<project_id>', methods=['GET'])
+@login_required
 def get_project(project_id):
     try:
+        user = request.current_user
         project = Project.query.get_or_404(project_id)
+        
+        # Verify project belongs to current user
+        if project.user_id != user.id:
+            return jsonify({'error': 'Access denied'}), 403
         
         project_data = project.to_dict()
         
@@ -102,10 +115,16 @@ def get_project(project_id):
         return jsonify({'error': str(e)}), 500
 
 @workspace_bp.route('/projects/<project_id>', methods=['PUT'])
+@login_required
 def update_project(project_id):
     try:
+        user = request.current_user
         data = request.get_json()
         project = Project.query.get_or_404(project_id)
+        
+        # Verify project belongs to current user
+        if project.user_id != user.id:
+            return jsonify({'error': 'Access denied'}), 403
         
         if 'title' in data:
             project.title = data['title']
@@ -114,7 +133,7 @@ def update_project(project_id):
         if 'status' in data:
             project.status = data['status']
         
-        project.updated_at = datetime.utcnow()
+        project.updated_at = datetime.now(timezone.utc)()
         db.session.commit()
         
         return jsonify({
@@ -126,9 +145,15 @@ def update_project(project_id):
         return jsonify({'error': str(e)}), 500
 
 @workspace_bp.route('/projects/<project_id>', methods=['DELETE'])
+@login_required
 def delete_project(project_id):
     try:
+        user = request.current_user
         project = Project.query.get_or_404(project_id)
+        
+        # Verify project belongs to current user
+        if project.user_id != user.id:
+            return jsonify({'error': 'Access denied'}), 403
         
         # Delete associated whiteboards and exports (cascade should handle this)
         db.session.delete(project)
@@ -143,8 +168,10 @@ def delete_project(project_id):
         return jsonify({'error': str(e)}), 500
 
 @workspace_bp.route('/share', methods=['POST'])
+@login_required
 def create_share_link():
     try:
+        user = request.current_user
         data = request.get_json()
         project_id = data.get('project_id')
         
@@ -152,6 +179,10 @@ def create_share_link():
             return jsonify({'error': 'Project ID required'}), 400
         
         project = Project.query.get_or_404(project_id)
+        
+        # Verify project belongs to current user
+        if project.user_id != user.id:
+            return jsonify({'error': 'Access denied'}), 403
         
         # Create or get existing share token
         if not project.share_token:
@@ -192,19 +223,22 @@ def get_shared_project(share_token):
         return jsonify({'error': str(e)}), 500
 
 @workspace_bp.route('/dashboard', methods=['GET'])
+@login_required
 def get_dashboard():
     try:
-        # Get recent projects
-        recent_projects = Project.query.order_by(Project.updated_at.desc()).limit(5).all()
+        user = request.current_user
         
-        # Get statistics
-        total_projects = Project.query.count()
-        total_whiteboards = Whiteboard.query.count()
-        completed_whiteboards = Whiteboard.query.filter_by(processing_status='completed').count()
-        total_exports = Export.query.count()
+        # Get recent projects for current user
+        recent_projects = Project.query.filter_by(user_id=user.id).order_by(Project.updated_at.desc()).limit(5).all()
         
-        # Get recent activity
-        recent_whiteboards = Whiteboard.query.order_by(Whiteboard.created_at.desc()).limit(5).all()
+        # Get statistics for current user
+        total_projects = Project.query.filter_by(user_id=user.id).count()
+        total_whiteboards = Whiteboard.query.filter_by(user_id=user.id).count()
+        completed_whiteboards = Whiteboard.query.filter_by(user_id=user.id, processing_status='completed').count()
+        total_exports = Export.query.filter_by(user_id=user.id).count()
+        
+        # Get recent activity for current user
+        recent_whiteboards = Whiteboard.query.filter_by(user_id=user.id).order_by(Whiteboard.created_at.desc()).limit(5).all()
         
         return jsonify({
             'stats': {
@@ -230,22 +264,26 @@ def get_dashboard():
         return jsonify({'error': str(e)}), 500
 
 @workspace_bp.route('/search', methods=['GET'])
+@login_required
 def search_projects():
     try:
+        user = request.current_user
         query = request.args.get('q', '')
         if not query:
             return jsonify({'error': 'Search query required'}), 400
         
-        # Search in project titles and descriptions
+        # Search in project titles and descriptions for current user
         projects = Project.query.filter(
+            Project.user_id == user.id,
             db.or_(
                 Project.title.contains(query),
                 Project.description.contains(query)
             )
         ).limit(20).all()
         
-        # Search in whiteboard content
+        # Search in whiteboard content for current user
         whiteboards = Whiteboard.query.filter(
+            Whiteboard.user_id == user.id,
             db.or_(
                 Whiteboard.raw_text.contains(query),
                 Whiteboard.structured_content.contains(query)

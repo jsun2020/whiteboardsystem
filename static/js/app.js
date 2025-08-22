@@ -145,12 +145,19 @@ class WhiteboardScribe {
 
             const response = await fetch('/api/upload/batch', {
                 method: 'POST',
+                headers: window.authManager.getAuthHeaders(),
                 body: formData
             });
 
             const result = await response.json();
 
             if (!response.ok) {
+                // Check for usage limit exceeded
+                if (response.status === 403 && result.usage_info) {
+                    this.hideProcessingSection();
+                    this.showUsageLimitModal(result);
+                    return;
+                }
                 throw new Error(result.error || 'Upload failed');
             }
 
@@ -183,12 +190,21 @@ class WhiteboardScribe {
 
                 const response = await fetch('/api/analyze', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...window.authManager.getAuthHeaders()
+                    },
                     body: JSON.stringify({ whiteboard_id: whiteboard.whiteboard_id })
                 });
 
                 const result = await response.json();
                 if (!response.ok) {
+                    // Check for usage limit exceeded
+                    if (response.status === 403 && result.usage_info) {
+                        this.hideProcessingSection();
+                        this.showUsageLimitModal(result);
+                        return;
+                    }
                     throw new Error(result.error || 'Analysis failed');
                 }
 
@@ -457,7 +473,10 @@ class WhiteboardScribe {
 
             const response = await fetch(`/api/projects/${this.currentProject.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...window.authManager.getAuthHeaders()
+                },
                 body: JSON.stringify({ title, status: 'completed' })
             });
 
@@ -479,7 +498,10 @@ class WhiteboardScribe {
         try {
             const response = await fetch('/api/share', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...window.authManager.getAuthHeaders()
+                },
                 body: JSON.stringify({ project_id: this.currentProject.id })
             });
 
@@ -543,7 +565,9 @@ class WhiteboardScribe {
 
     async loadDashboardData() {
         try {
-            const response = await fetch('/api/dashboard');
+            const response = await fetch('/api/dashboard', {
+                headers: window.authManager.getAuthHeaders()
+            });
             if (response.ok) {
                 const data = await response.json();
                 this.updateDashboardStats(data.stats);
@@ -594,6 +618,42 @@ class WhiteboardScribe {
 
     closeModal() {
         hideElement('modalOverlay');
+    }
+
+    showUsageLimitModal(errorData) {
+        const modalContent = `
+            <div class="usage-limit-modal">
+                <div class="limit-icon">
+                    <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 3rem;"></i>
+                </div>
+                <h3>Usage Limit Reached</h3>
+                <p>You have used all ${errorData.usage_info?.free_uses_remaining !== undefined ? '10' : ''} free uses.</p>
+                
+                <div class="usage-options">
+                    <div class="option-card">
+                        <h4><i class="fas fa-key"></i> Add Your API Key</h4>
+                        <p>Use your own Doubao API key for unlimited usage</p>
+                        <button class="btn btn-outline" onclick="showApiKeyModal(); closeModal();">
+                            Add API Key
+                        </button>
+                    </div>
+                    
+                    <div class="option-card featured">
+                        <h4><i class="fas fa-crown"></i> Upgrade Plan</h4>
+                        <p>Get unlimited usage with our premium plans</p>
+                        <div class="pricing-preview">
+                            <span class="price">¥16.5/month</span>
+                            <span class="savings">or save with longer plans</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="showPaymentModal(); closeModal();">
+                            View Plans
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.showModal('Usage Limit Reached', modalContent);
     }
 
     restoreTheme() {

@@ -2,15 +2,30 @@ import os
 from flask import Blueprint, request, jsonify, send_file, current_app
 from models.project import Project
 from models.export import Export
+from models.user import User
 from database import db
 from services.export_service import ExportService
+from api.auth import login_required
 import json
 
 export_bp = Blueprint('export', __name__)
 
 @export_bp.route('/export', methods=['POST'])
+@login_required
 def generate_export():
     try:
+        # Check user's service eligibility
+        user = request.current_user
+        if not user.can_use_service():
+            return jsonify({
+                'error': 'Usage limit exceeded. Please upgrade your plan or add your API key in Settings.',
+                'usage_info': {
+                    'free_uses_remaining': max(0, 10 - user.free_uses_count),
+                    'subscription_type': user.subscription_type,
+                    'has_custom_api': bool(user.custom_api_key)
+                }
+            }), 403
+        
         data = request.get_json()
         project_id = data.get('project_id')
         export_format = data.get('format')
@@ -23,6 +38,10 @@ def generate_export():
             return jsonify({'error': 'Invalid export format'}), 400
         
         project = Project.query.get_or_404(project_id)
+        
+        # Verify project belongs to current user
+        if project.user_id != user.id:
+            return jsonify({'error': 'Access denied'}), 403
         
         # Check if project has content
         if not project.whiteboards or not any(wb.processing_status == 'completed' for wb in project.whiteboards):
@@ -50,6 +69,7 @@ def generate_export():
             # Create export record
             export = Export(
                 project_id=project_id,
+                user_id=user.id,  # Associate export with current user
                 export_type=export_format,
                 filename=filename,
                 file_path=file_path,
@@ -58,6 +78,9 @@ def generate_export():
                 status='completed'
             )
             export.mark_completed()
+            
+            # Increment export usage
+            user.increment_usage('exports')
             
             db.session.add(export)
             db.session.commit()

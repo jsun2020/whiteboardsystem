@@ -7,16 +7,31 @@ from PIL import Image, ExifTags
 import mimetypes
 from models.project import Project
 from models.whiteboard import Whiteboard
+from models.user import User
 from database import db
 from services.storage_service import StorageService
 from services.image_processor import ImageProcessor
 from utils.validators import validate_image_file
+from api.auth import login_required
 
 upload_bp = Blueprint('upload', __name__)
 
 @upload_bp.route('/upload', methods=['POST'])
+@login_required
 def upload_image():
     try:
+        # Check user's service eligibility
+        user = request.current_user
+        if not user.can_use_service():
+            return jsonify({
+                'error': 'Usage limit exceeded. Please upgrade your plan or add your API key in Settings.',
+                'usage_info': {
+                    'free_uses_remaining': max(0, 10 - user.free_uses_count),
+                    'subscription_type': user.subscription_type,
+                    'has_custom_api': bool(user.custom_api_key)
+                }
+            }), 403
+        
         # Check if file is present
         if 'image' not in request.files:
             return jsonify({'error': 'No image file provided'}), 400
@@ -29,11 +44,17 @@ def upload_image():
         project_id = request.form.get('project_id')
         if not project_id:
             project = Project()
+            project.user_id = user.id  # Associate project with current user
             db.session.add(project)
             db.session.commit()
             project_id = project.id
+            # Increment project usage
+            user.increment_usage('projects')
         else:
             project = Project.query.get_or_404(project_id)
+            # Verify project belongs to current user
+            if project.user_id != user.id:
+                return jsonify({'error': 'Access denied'}), 403
         
         # Validate file
         validation_result = validate_image_file(file)
@@ -59,12 +80,16 @@ def upload_image():
         # Create whiteboard record
         whiteboard = Whiteboard(
             project_id=project_id,
+            user_id=user.id,  # Associate whiteboard with current user
             filename=filename,
             original_path=original_path,
             file_size=file_size,
             mime_type=mime_type,
             processing_status='uploaded'
         )
+        
+        # Increment image usage
+        user.increment_usage('images')
         
         db.session.add(whiteboard)
         db.session.commit()
@@ -108,8 +133,21 @@ def upload_image():
         return jsonify({'error': str(e)}), 500
 
 @upload_bp.route('/upload/batch', methods=['POST'])
+@login_required
 def upload_batch():
     try:
+        # Check user's service eligibility
+        user = request.current_user
+        if not user.can_use_service():
+            return jsonify({
+                'error': 'Usage limit exceeded. Please upgrade your plan or add your API key in Settings.',
+                'usage_info': {
+                    'free_uses_remaining': max(0, 10 - user.free_uses_count),
+                    'subscription_type': user.subscription_type,
+                    'has_custom_api': bool(user.custom_api_key)
+                }
+            }), 403
+        
         files = request.files.getlist('images')
         if not files:
             return jsonify({'error': 'No images provided'}), 400
@@ -121,9 +159,17 @@ def upload_batch():
         project_id = request.form.get('project_id')
         if not project_id:
             project = Project()
+            project.user_id = user.id  # Associate project with current user
             db.session.add(project)
             db.session.commit()
             project_id = project.id
+            # Increment project usage
+            user.increment_usage('projects')
+        else:
+            project = Project.query.get_or_404(project_id)
+            # Verify project belongs to current user
+            if project.user_id != user.id:
+                return jsonify({'error': 'Access denied'}), 403
         
         results = []
         for file in files:
@@ -155,12 +201,16 @@ def upload_batch():
                 
                 whiteboard = Whiteboard(
                     project_id=project_id,
+                    user_id=user.id,  # Associate whiteboard with current user
                     filename=filename,
                     original_path=original_path,
                     file_size=file_size,
                     mime_type=mime_type,
                     processing_status='uploaded'
                 )
+                
+                # Increment image usage for each successful upload
+                user.increment_usage('images')
                 
                 db.session.add(whiteboard)
                 db.session.commit()

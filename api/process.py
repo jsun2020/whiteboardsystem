@@ -3,16 +3,31 @@ import json
 from flask import Blueprint, request, jsonify, Response, current_app
 from models.whiteboard import Whiteboard
 from models.project import Project
+from models.user import User
 from database import db
 from services.doubao_service import DoubaoService
 from services.content_analyzer import ContentAnalyzer
 from services.image_processor import ImageProcessor
+from api.auth import login_required
 
 process_bp = Blueprint('process', __name__)
 
 @process_bp.route('/analyze', methods=['POST'])
+@login_required
 def analyze_whiteboard():
     try:
+        # Check user's service eligibility
+        user = request.current_user
+        if not user.can_use_service():
+            return jsonify({
+                'error': 'Usage limit exceeded. Please upgrade your plan or add your API key in Settings.',
+                'usage_info': {
+                    'free_uses_remaining': max(0, 10 - user.free_uses_count),
+                    'subscription_type': user.subscription_type,
+                    'has_custom_api': bool(user.custom_api_key)
+                }
+            }), 403
+        
         data = request.get_json()
         whiteboard_id = data.get('whiteboard_id')
         
@@ -20,6 +35,10 @@ def analyze_whiteboard():
             return jsonify({'error': 'Whiteboard ID required'}), 400
         
         whiteboard = Whiteboard.query.get_or_404(whiteboard_id)
+        
+        # Verify whiteboard belongs to current user
+        if whiteboard.user_id != user.id:
+            return jsonify({'error': 'Access denied'}), 403
         
         if whiteboard.processing_status == 'processing':
             return jsonify({'error': 'Already processing'}), 409

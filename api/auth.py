@@ -3,8 +3,8 @@ from models.user import User
 from database import db
 import uuid
 from functools import wraps
-import jwt
-from datetime import datetime, timedelta
+import jwt as pyjwt
+from datetime import datetime, timedelta, timezone
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -18,7 +18,7 @@ def login_required(f):
         try:
             if token.startswith('Bearer '):
                 token = token[7:]
-            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            data = pyjwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
             current_user = User.query.get(data['user_id'])
             if not current_user or not current_user.is_active:
                 return jsonify({'error': 'Invalid token'}), 401
@@ -73,9 +73,9 @@ def register():
         
         # Generate JWT token
         try:
-            token = jwt.encode({
+            token = pyjwt.encode({
                 'user_id': user.id,
-                'exp': datetime.utcnow() + timedelta(days=30)
+                'exp': datetime.now(timezone.utc) + timedelta(days=30)
             }, current_app.config['SECRET_KEY'], algorithm='HS256')
         except Exception as jwt_error:
             current_app.logger.error(f'JWT token generation error: {str(jwt_error)}')
@@ -119,9 +119,9 @@ def login():
         
         # Generate JWT token
         try:
-            token = jwt.encode({
+            token = pyjwt.encode({
                 'user_id': user.id,
-                'exp': datetime.utcnow() + timedelta(days=30)
+                'exp': datetime.now(timezone.utc) + timedelta(days=30)
             }, current_app.config['SECRET_KEY'], algorithm='HS256')
         except Exception as jwt_error:
             current_app.logger.error(f'JWT token generation error: {str(jwt_error)}')
@@ -177,7 +177,7 @@ def update_profile():
     if 'custom_api_key' in data:
         user.custom_api_key = data['custom_api_key']  # Should encrypt this in production
     
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.now(timezone.utc)
     db.session.commit()
     
     return jsonify({
@@ -235,7 +235,7 @@ def list_users():
 def get_admin_stats():
     total_users = User.query.count()
     active_subscriptions = User.query.filter(
-        User.subscription_expires_at > datetime.utcnow(),
+        User.subscription_expires_at > datetime.now(timezone.utc),
         User.payment_status == 'active'
     ).count()
     pending_payments = User.query.filter_by(payment_status='pending').count()
@@ -272,14 +272,14 @@ def update_user_subscription(user_id):
     # Set subscription expiration based on type
     if data.get('activate_subscription'):
         if user.subscription_type == 'monthly':
-            user.subscription_expires_at = datetime.utcnow() + timedelta(days=30)
+            user.subscription_expires_at = datetime.now(timezone.utc) + timedelta(days=30)
         elif user.subscription_type == 'semi_annual':
-            user.subscription_expires_at = datetime.utcnow() + timedelta(days=182)
+            user.subscription_expires_at = datetime.now(timezone.utc) + timedelta(days=182)
         elif user.subscription_type == 'annual':
-            user.subscription_expires_at = datetime.utcnow() + timedelta(days=365)
+            user.subscription_expires_at = datetime.now(timezone.utc) + timedelta(days=365)
         user.payment_status = 'active'
     
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.now(timezone.utc)
     db.session.commit()
     
     return jsonify({

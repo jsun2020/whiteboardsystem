@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from database import db
 import uuid
 import hashlib
@@ -20,7 +20,7 @@ class User(db.Model):
     
     # Session tracking
     session_token = db.Column(db.String(36), unique=True, nullable=True)
-    last_active = db.Column(db.DateTime, default=datetime.utcnow)
+    last_active = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     # Usage tracking
     projects_created = db.Column(db.Integer, default=0)
@@ -39,8 +39,8 @@ class User(db.Model):
     theme_preference = db.Column(db.String(10), default='light')
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     
     # Relationships
     projects = db.relationship('Project', backref='user', lazy=True)
@@ -61,7 +61,7 @@ class User(db.Model):
             return True
         
         # Check if user has active subscription
-        if self.subscription_expires_at and self.subscription_expires_at > datetime.utcnow():
+        if self.subscription_expires_at and self.subscription_expires_at > datetime.now(timezone.utc)():
             return True
             
         # Check if user has custom API key
@@ -81,7 +81,7 @@ class User(db.Model):
             self.exports_generated += 1
         
         # Increment free uses if not subscribed and no custom API
-        if (not self.subscription_expires_at or self.subscription_expires_at <= datetime.utcnow()) and not self.custom_api_key:
+        if (not self.subscription_expires_at or self.subscription_expires_at <= datetime.now(timezone.utc)()) and not self.custom_api_key:
             self.free_uses_count += 1
             
         db.session.commit()
@@ -109,7 +109,7 @@ class User(db.Model):
         }
     
     def update_activity(self):
-        self.last_active = datetime.utcnow()
+        self.last_active = datetime.now(timezone.utc)()
         db.session.commit()
     
     @classmethod
