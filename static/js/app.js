@@ -45,7 +45,20 @@ class WhiteboardScribe {
     setupEventListeners() {
         // File input change
         document.getElementById('fileInput')?.addEventListener('change', (e) => {
-            this.handleFileSelect(e);
+            requireAuth(() => {
+                this.handleFileSelect(e);
+            });
+        });
+
+        // Upload zone click protection
+        document.getElementById('uploadZone')?.addEventListener('click', (e) => {
+            // Check if user is authenticated before allowing file selection
+            if (!window.authManager.isAuthenticated()) {
+                e.preventDefault();
+                e.stopPropagation();
+                showLoginModal();
+                return false;
+            }
         });
 
         // Keyboard shortcuts
