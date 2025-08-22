@@ -20,7 +20,7 @@ class User(db.Model):
     
     # Session tracking
     session_token = db.Column(db.String(36), unique=True, nullable=True)
-    last_active = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    last_active = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Usage tracking
     projects_created = db.Column(db.Integer, default=0)
@@ -39,8 +39,8 @@ class User(db.Model):
     theme_preference = db.Column(db.String(10), default='light')
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     projects = db.relationship('Project', backref='user', lazy=True)
@@ -109,7 +109,7 @@ class User(db.Model):
         }
     
     def update_activity(self):
-        self.last_active = datetime.now(timezone.utc)()
+        self.last_active = datetime.now(timezone.utc)
         db.session.commit()
     
     @classmethod

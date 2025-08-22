@@ -20,7 +20,7 @@ class Export(db.Model):
     error_message = db.Column(db.Text, nullable=True)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = db.Column(db.DateTime, nullable=True)
     
     # Download tracking

@@ -25,7 +25,7 @@ class Whiteboard(db.Model):
     confidence_score = db.Column(db.Float, nullable=True)
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     processed_at = db.Column(db.DateTime, nullable=True)
     
     def to_dict(self):
