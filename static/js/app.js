@@ -145,7 +145,7 @@ class WhiteboardScribe {
 
             const response = await fetch('/api/upload/batch', {
                 method: 'POST',
-                headers: window.authManager.getAuthHeaders(),
+                headers: window.authManager.getAuthHeaders(true), // Skip Content-Type for FormData
                 body: formData
             });
 

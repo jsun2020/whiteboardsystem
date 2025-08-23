@@ -149,6 +149,9 @@ def upload_batch():
             }), 403
         
         files = request.files.getlist('images')
+        current_app.logger.info(f'Upload batch - received {len(files)} files')
+        current_app.logger.info(f'Request files keys: {list(request.files.keys())}')
+        current_app.logger.info(f'Request form keys: {list(request.form.keys())}')
         if not files:
             return jsonify({'error': 'No images provided'}), 400
         
@@ -179,6 +182,7 @@ def upload_batch():
             # Process each file (similar to single upload)
             validation_result = validate_image_file(file)
             if not validation_result['valid']:
+                current_app.logger.warning(f'File validation failed for {file.filename}: {validation_result["error"]}')
                 results.append({
                     'filename': file.filename,
                     'success': False,
@@ -236,6 +240,7 @@ def upload_batch():
         })
         
     except Exception as e:
+        current_app.logger.error(f'Upload batch error: {str(e)}', exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @upload_bp.route('/upload/status/<task_id>', methods=['GET'])

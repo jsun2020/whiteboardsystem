@@ -401,13 +401,15 @@ class AuthManager {
         }
     }
 
-    getAuthHeaders() {
-        return this.token ? {
-            'Authorization': `Bearer ${this.token}`,
-            'Content-Type': 'application/json'
-        } : {
-            'Content-Type': 'application/json'
-        };
+    getAuthHeaders(skipContentType = false) {
+        const headers = {};
+        if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+        }
+        if (!skipContentType) {
+            headers['Content-Type'] = 'application/json';
+        }
+        return headers;
     }
 }
 
