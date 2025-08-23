@@ -233,12 +233,12 @@ def get_dashboard():
         
         # Get statistics for current user
         total_projects = Project.query.filter_by(user_id=user.id).count()
-        total_whiteboards = Whiteboard.query.filter_by(user_id=user.id).count()
-        completed_whiteboards = Whiteboard.query.filter_by(user_id=user.id, processing_status='completed').count()
-        total_exports = Export.query.filter_by(user_id=user.id).count()
+        total_whiteboards = Whiteboard.query.join(Project).filter(Project.user_id == user.id).count()
+        completed_whiteboards = Whiteboard.query.join(Project).filter(Project.user_id == user.id, Whiteboard.processing_status == 'completed').count()
+        total_exports = Export.query.join(Project).filter(Project.user_id == user.id).count()
         
         # Get recent activity for current user
-        recent_whiteboards = Whiteboard.query.filter_by(user_id=user.id).order_by(Whiteboard.created_at.desc()).limit(5).all()
+        recent_whiteboards = Whiteboard.query.join(Project).filter(Project.user_id == user.id).order_by(Whiteboard.created_at.desc()).limit(5).all()
         
         return jsonify({
             'stats': {

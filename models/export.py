@@ -44,12 +44,12 @@ class Export(db.Model):
     
     def mark_downloaded(self):
         self.download_count += 1
-        self.last_downloaded = datetime.now(timezone.utc)()
+        self.last_downloaded = datetime.now(timezone.utc)
         db.session.commit()
     
     def mark_completed(self):
         self.status = 'completed'
-        self.completed_at = datetime.now(timezone.utc)()
+        self.completed_at = datetime.now(timezone.utc)
         db.session.commit()
     
     def mark_error(self, error_message):

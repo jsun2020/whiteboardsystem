@@ -69,7 +69,6 @@ def generate_export():
             # Create export record
             export = Export(
                 project_id=project_id,
-                user_id=user.id,  # Associate export with current user
                 export_type=export_format,
                 filename=filename,
                 file_path=file_path,
