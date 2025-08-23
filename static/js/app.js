@@ -633,7 +633,7 @@ class WhiteboardScribe {
                     <div class="option-card">
                         <h4><i class="fas fa-key"></i> Add Your API Key</h4>
                         <p>Use your own Doubao API key for unlimited usage</p>
-                        <button class="btn btn-outline" onclick="showApiKeyModal(); closeModal();">
+                        <button class="btn btn-outline" onclick="window.showApiKeyFromUsageLimit()">
                             Add API Key
                         </button>
                     </div>
@@ -645,7 +645,7 @@ class WhiteboardScribe {
                             <span class="price">¥16.5/month</span>
                             <span class="savings">or save with longer plans</span>
                         </div>
-                        <button class="btn btn-primary" onclick="showPaymentModal(); closeModal();">
+                        <button class="btn btn-primary" onclick="window.showPaymentFromUsageLimit()">
                             View Plans
                         </button>
                     </div>
@@ -890,4 +890,47 @@ function getToastIcon(type) {
         info: 'info-circle'
     };
     return icons[type] || 'info-circle';
+}
+
+// Global wrapper functions for usage limit modal
+window.showApiKeyFromUsageLimit = function() {
+    closeModal();  // Close usage limit modal first
+    setTimeout(() => {
+        if (typeof showApiKeyModal === 'function') {
+            showApiKeyModal();
+        } else {
+            console.error('showApiKeyModal function not found');
+        }
+    }, 100);
+}
+
+window.showPaymentFromUsageLimit = function() {
+    closeModal();  // Close usage limit modal first
+    setTimeout(() => {
+        if (typeof showPaymentModal === 'function') {
+            showPaymentModal();
+        } else {
+            console.error('showPaymentModal function not found');
+        }
+    }, 100);
+}
+
+// Global modal functions
+window.closeModal = function() {
+    if (window.app && window.app.closeModal) {
+        window.app.closeModal();
+    } else {
+        hideElement('modalOverlay');
+    }
+}
+
+window.showModal = function(title, content, footer = '') {
+    if (window.app && window.app.showModal) {
+        window.app.showModal(title, content, footer);
+    } else {
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalBody').innerHTML = content;
+        document.getElementById('modalFooter').innerHTML = footer;
+        showElement('modalOverlay');
+    }
 }
