@@ -363,7 +363,12 @@ class AuthManager {
                     <h5>Payment Collection QR Code</h5>
                     <p>Users scan this QR code to make payments:</p>
                     <div class="qr-container">
-                        <img src="/static/assets/images/payment-qr.png" alt="Payment QR Code" class="qr-code" style="max-width: 200px;">
+                        <div class="qr-placeholder" style="width: 200px; height: 200px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; background: #f9f9f9; margin: 0 auto;">
+                            <div style="text-align: center; color: #666;">
+                                <i class="fas fa-qrcode" style="font-size: 2rem; margin-bottom: 5px;"></i>
+                                <p style="margin: 0; font-size: 12px;">QR Code Placeholder</p>
+                            </div>
+                        </div>
                     </div>
                     <p class="note">
                         <strong>Instructions for customers:</strong><br>
@@ -799,7 +804,7 @@ function showSettingsModal() {
                                 Math.max(0, 10 - (authManager.user?.free_uses_count || 0))) : '0'}</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="showPaymentModal(); closeModal()">Upgrade Plan</button>
+                    <button class="btn btn-primary" onclick="showPaymentModal()">Upgrade Plan</button>
                 </div>
             </div>
             <div class="settings-footer">
@@ -949,7 +954,13 @@ function initiatePayment(planType) {
             <h4>Payment Instructions</h4>
             <p>Please scan the QR code below to make payment:</p>
             <div class="qr-container">
-                <img src="/static/assets/images/payment-qr.png" alt="Payment QR Code" class="qr-code">
+                <div class="qr-placeholder" style="width: 200px; height: 200px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; background: #f9f9f9; margin: 0 auto;">
+                    <div style="text-align: center; color: #666;">
+                        <i class="fas fa-qrcode" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                        <p style="margin: 0; font-size: 14px;">QR Code Placeholder</p>
+                        <p style="margin: 5px 0 0 0; font-size: 12px;">Replace with actual payment QR</p>
+                    </div>
+                </div>
             </div>
             <div class="payment-info">
                 <p><strong>Plan:</strong> ${planType === 'monthly' ? 'Monthly (¥16.5)' : 
