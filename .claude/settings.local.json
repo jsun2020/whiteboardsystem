@@ -9,7 +9,11 @@
       "Bash(git add:*)",
       "Bash(git init:*)",
       "Bash(git commit:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(pip show:*)",
+      "Bash(source:*)",
+      "Bash(pip uninstall:*)"
     ],
     "deny": [],
     "additionalDirectories": [
