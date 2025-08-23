@@ -3,7 +3,7 @@ from models.user import User
 from database import db
 import uuid
 from functools import wraps
-import jwt as pyjwt
+import jwt
 from datetime import datetime, timedelta, timezone
 
 auth_bp = Blueprint('auth', __name__)
@@ -18,7 +18,7 @@ def login_required(f):
         try:
             if token.startswith('Bearer '):
                 token = token[7:]
-            data = pyjwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
             current_user = User.query.get(data['user_id'])
             if not current_user or not current_user.is_active:
                 return jsonify({'error': 'Invalid token'}), 401
@@ -73,7 +73,7 @@ def register():
         
         # Generate JWT token
         try:
-            token = pyjwt.encode({
+            token = jwt.encode({
                 'user_id': user.id,
                 'exp': datetime.now(timezone.utc) + timedelta(days=30)
             }, current_app.config['SECRET_KEY'], algorithm='HS256')
@@ -119,7 +119,7 @@ def login():
         
         # Generate JWT token
         try:
-            token = pyjwt.encode({
+            token = jwt.encode({
                 'user_id': user.id,
                 'exp': datetime.now(timezone.utc) + timedelta(days=30)
             }, current_app.config['SECRET_KEY'], algorithm='HS256')

@@ -11,6 +11,9 @@
       "Bash(git commit:*)",
       "Bash(node:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "C:\\c\\Users\\sr9rfx\\.claude"
+    ]
   }
 }
