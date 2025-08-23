@@ -94,6 +94,8 @@ uploads/
 exports/temp/
 temp/
 *.tmp
+Project Requirements.md
+BILLING_SYSTEM.md
 
 # Node modules (if using any frontend build tools)
 node_modules/
@@ -115,6 +117,7 @@ docker-compose.override.yml
 issue*.png
 demo*/
 screenshots/
+UI.png
 
 # Celery
 celerybeat-schedule
