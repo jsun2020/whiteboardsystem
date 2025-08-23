@@ -223,6 +223,9 @@ class AuthManager {
                             <button class="btn btn-outline" onclick="authManager.exportSystemData()">
                                 <i class="fas fa-download"></i> Export Data
                             </button>
+                            <button class="btn btn-outline" onclick="authManager.showApiKeyManagement()">
+                                <i class="fas fa-key"></i> API Key Management
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -398,6 +401,156 @@ class AuthManager {
             }
         } catch (error) {
             showToast('Failed to export system data', 'error');
+        }
+    }
+
+    async showApiKeyManagement() {
+        try {
+            const response = await fetch('/api/auth/admin/users', {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load users');
+            }
+
+            const data = await response.json();
+            const usersWithApiKeys = data.users.filter(user => user.custom_api_key);
+
+            let modalBody = `
+                <div class="api-key-management">
+                    <h4>API Key Management</h4>
+                    <p>Manage user API keys for premium access</p>
+                    
+                    <div class="api-key-stats">
+                        <div class="stat-card">
+                            <span class="stat-number">${usersWithApiKeys.length}</span>
+                            <span class="stat-label">Users with API Keys</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">${data.users.filter(u => u.subscription_type !== 'free').length}</span>
+                            <span class="stat-label">Premium Subscribers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="users-with-keys">
+                        <h5>Users with Custom API Keys</h5>
+                        ${usersWithApiKeys.length === 0 ? 
+                            '<p class="no-data">No users have added custom API keys yet.</p>' :
+                            `<div class="user-list">
+                                ${usersWithApiKeys.map(user => `
+                                    <div class="user-item">
+                                        <div class="user-info">
+                                            <strong>${user.email}</strong>
+                                            <span class="user-details">${user.display_name || user.username}</span>
+                                        </div>
+                                        <div class="user-stats">
+                                            <span class="usage-count">Images: ${user.images_processed || 0}</span>
+                                            <span class="usage-count">Exports: ${user.exports_generated || 0}</span>
+                                        </div>
+                                        <div class="user-actions">
+                                            <button class="btn btn-sm btn-outline" onclick="authManager.viewUserApiKey('${user.id}')">
+                                                <i class="fas fa-eye"></i> View Key
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="authManager.revokeApiKey('${user.id}')">
+                                                <i class="fas fa-times"></i> Revoke
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>`
+                        }
+                    </div>
+                    
+                    <div class="admin-actions">
+                        <button class="btn btn-primary" onclick="authManager.generateSystemApiKey()">
+                            <i class="fas fa-plus"></i> Generate System API Key
+                        </button>
+                        <button class="btn btn-outline" onclick="authManager.showApiKeyStats()">
+                            <i class="fas fa-chart-bar"></i> View Statistics
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (typeof window.showModal === 'function') {
+                window.showModal('API Key Management', modalBody);
+            } else {
+                console.error('Global showModal function not available');
+            }
+        } catch (error) {
+            console.error('API key management error:', error);
+            showToast('Failed to load API key management', 'error');
+        }
+    }
+
+    async viewUserApiKey(userId) {
+        try {
+            const response = await fetch(`/api/auth/admin/users/${userId}`, {
+                headers: this.getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get user details');
+            }
+
+            const user = await response.json();
+            const maskedKey = user.custom_api_key ? 
+                user.custom_api_key.substring(0, 8) + '...' + user.custom_api_key.substring(user.custom_api_key.length - 4) : 
+                'No API key set';
+
+            const modalBody = `
+                <div class="user-api-key-details">
+                    <h4>API Key Details</h4>
+                    <div class="user-info-card">
+                        <strong>User:</strong> ${user.email}<br>
+                        <strong>Display Name:</strong> ${user.display_name || user.username}<br>
+                        <strong>API Key:</strong> <code>${maskedKey}</code><br>
+                        <strong>Usage Stats:</strong>
+                        <ul>
+                            <li>Images Processed: ${user.images_processed || 0}</li>
+                            <li>Projects Created: ${user.projects_created || 0}</li>
+                            <li>Exports Generated: ${user.exports_generated || 0}</li>
+                        </ul>
+                    </div>
+                    <div class="admin-actions">
+                        <button class="btn btn-danger" onclick="authManager.revokeApiKey('${userId}'); closeModal();">
+                            Revoke API Key
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (typeof window.showModal === 'function') {
+                window.showModal('User API Key', modalBody);
+            }
+        } catch (error) {
+            showToast('Failed to load user API key details', 'error');
+        }
+    }
+
+    async revokeApiKey(userId) {
+        if (!confirm('Are you sure you want to revoke this user\'s API key? They will lose unlimited access.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/auth/admin/users/${userId}`, {
+                method: 'PUT',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify({
+                    custom_api_key: null
+                })
+            });
+
+            if (response.ok) {
+                showToast('API key revoked successfully', 'success');
+                this.showApiKeyManagement(); // Refresh the management view
+            } else {
+                throw new Error('Failed to revoke API key');
+            }
+        } catch (error) {
+            showToast('Failed to revoke API key', 'error');
         }
     }
 
@@ -655,7 +808,11 @@ function showSettingsModal() {
         </div>
     `;
     
-    showModal('Settings', settingsModalBody);
+    if (typeof window.showModal === 'function') {
+        window.showModal('Settings', settingsModalBody);
+    } else {
+        console.error('Global showModal function not available');
+    }
 }
 
 // Settings Modal Helper Functions
@@ -779,7 +936,11 @@ function showPaymentModal() {
         </div>
     `;
     
-    showModal('Choose Your Plan', modalBody);
+    if (typeof window.showModal === 'function') {
+        window.showModal('Choose Your Plan', modalBody);
+    } else {
+        console.error('Global showModal function not available');
+    }
 }
 
 function initiatePayment(planType) {
@@ -804,7 +965,11 @@ function initiatePayment(planType) {
         </div>
     `;
     
-    showModal('Complete Payment', qrCodeModalBody);
+    if (typeof window.showModal === 'function') {
+        window.showModal('Complete Payment', qrCodeModalBody);
+    } else {
+        console.error('Global showModal function not available');
+    }
 }
 
 function showApiKeyModal() {
@@ -828,7 +993,11 @@ function showApiKeyModal() {
         </div>
     `;
     
-    showModal('API Key Settings', apiKeyModalBody);
+    if (typeof window.showModal === 'function') {
+        window.showModal('API Key Settings', apiKeyModalBody);
+    } else {
+        console.error('Global showModal function not available');
+    }
 }
 
 async function saveApiKey(event) {
