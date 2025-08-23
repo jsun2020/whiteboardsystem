@@ -70,5 +70,5 @@ class Whiteboard(db.Model):
         if error_message is not None:
             self.error_message = error_message
         if status == 'completed':
-            self.processed_at = datetime.now(timezone.utc)()
+            self.processed_at = datetime.now(timezone.utc)
         db.session.commit()

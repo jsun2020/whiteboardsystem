@@ -281,9 +281,9 @@ def search_projects():
             )
         ).limit(20).all()
         
-        # Search in whiteboard content for current user
-        whiteboards = Whiteboard.query.filter(
-            Whiteboard.user_id == user.id,
+        # Search in whiteboard content for current user (through project)
+        whiteboards = Whiteboard.query.join(Project).filter(
+            Project.user_id == user.id,
             db.or_(
                 Whiteboard.raw_text.contains(query),
                 Whiteboard.structured_content.contains(query)

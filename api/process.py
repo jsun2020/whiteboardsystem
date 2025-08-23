@@ -36,8 +36,9 @@ def analyze_whiteboard():
         
         whiteboard = Whiteboard.query.get_or_404(whiteboard_id)
         
-        # Verify whiteboard belongs to current user
-        if whiteboard.user_id != user.id:
+        # Verify whiteboard belongs to current user (check through project)
+        project = Project.query.get(whiteboard.project_id)
+        if not project or project.user_id != user.id:
             return jsonify({'error': 'Access denied'}), 403
         
         if whiteboard.processing_status == 'processing':
