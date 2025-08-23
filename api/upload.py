@@ -80,7 +80,6 @@ def upload_image():
         # Create whiteboard record
         whiteboard = Whiteboard(
             project_id=project_id,
-            user_id=user.id,  # Associate whiteboard with current user
             filename=filename,
             original_path=original_path,
             file_size=file_size,
@@ -149,9 +148,6 @@ def upload_batch():
             }), 403
         
         files = request.files.getlist('images')
-        current_app.logger.info(f'Upload batch - received {len(files)} files')
-        current_app.logger.info(f'Request files keys: {list(request.files.keys())}')
-        current_app.logger.info(f'Request form keys: {list(request.form.keys())}')
         if not files:
             return jsonify({'error': 'No images provided'}), 400
         
@@ -182,7 +178,6 @@ def upload_batch():
             # Process each file (similar to single upload)
             validation_result = validate_image_file(file)
             if not validation_result['valid']:
-                current_app.logger.warning(f'File validation failed for {file.filename}: {validation_result["error"]}')
                 results.append({
                     'filename': file.filename,
                     'success': False,
@@ -205,7 +200,6 @@ def upload_batch():
                 
                 whiteboard = Whiteboard(
                     project_id=project_id,
-                    user_id=user.id,  # Associate whiteboard with current user
                     filename=filename,
                     original_path=original_path,
                     file_size=file_size,
@@ -226,6 +220,7 @@ def upload_batch():
                 })
                 
             except Exception as e:
+                current_app.logger.error(f'Error processing file {file.filename}: {str(e)}', exc_info=True)
                 results.append({
                     'filename': file.filename,
                     'success': False,
