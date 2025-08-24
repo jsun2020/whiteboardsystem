@@ -13,7 +13,9 @@
       "Bash(find:*)",
       "Bash(pip show:*)",
       "Bash(source:*)",
-      "Bash(pip uninstall:*)"
+      "Bash(pip uninstall:*)",
+      "Read(/C:\\c\\Users\\sr9rfx\\.claude/**)",
+      "Read(/C:\\c\\Users\\sr9rfx\\.claude/**)"
     ],
     "deny": [],
     "additionalDirectories": [
