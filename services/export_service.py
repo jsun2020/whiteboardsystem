@@ -13,7 +13,11 @@ import uuid
 class ExportService:
     def __init__(self):
         self.export_folder = Config.EXPORT_FOLDER
-        os.makedirs(self.export_folder, exist_ok=True)
+        try:
+            os.makedirs(self.export_folder, exist_ok=True)
+        except OSError:
+            # In serverless environments, directories will be created on demand
+            pass
     
     def to_markdown(self, project, options: Dict[str, Any] = None) -> Tuple[str, str]:
         """

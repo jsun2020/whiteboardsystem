@@ -19,8 +19,15 @@ def create_app(config_name=None):
     CORS(app, origins=app.config['CORS_ORIGINS'])
     
     # Create upload and export directories
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['EXPORT_FOLDER'], exist_ok=True)
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        os.makedirs(app.config['EXPORT_FOLDER'], exist_ok=True)
+        # Create subdirectories for uploads
+        os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'original'), exist_ok=True)
+        os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'processed'), exist_ok=True)
+    except OSError as e:
+        # In serverless environments, directories will be created on demand
+        print(f"Warning: Could not create directories: {e}")
     
     # Register blueprints
     from api.upload import upload_bp

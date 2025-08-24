@@ -10,7 +10,7 @@ class Config:
     
     # File Upload Settings
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+    UPLOAD_FOLDER = '/tmp/uploads' if os.environ.get('VERCEL') else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic'}
     
     # Redis Settings
@@ -29,7 +29,7 @@ class Config:
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
     
     # Export Settings
-    EXPORT_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'exports', 'temp')
+    EXPORT_FOLDER = '/tmp/exports' if os.environ.get('VERCEL') else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'exports', 'temp')
     
     # Security Settings
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')

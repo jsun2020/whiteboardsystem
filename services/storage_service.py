@@ -35,7 +35,11 @@ class StorageService:
         
         # Ensure upload folder exists for local storage
         if self.storage_type == 'local':
-            os.makedirs(self.upload_folder, exist_ok=True)
+            try:
+                os.makedirs(self.upload_folder, exist_ok=True)
+            except OSError:
+                # In serverless environments, directories will be created on demand
+                pass
     
     def save_file(self, file: FileStorage, filename: str, subfolder: str = '') -> str:
         """
@@ -59,7 +63,11 @@ class StorageService:
         """
         # Create subfolder if specified
         save_directory = os.path.join(self.upload_folder, subfolder) if subfolder else self.upload_folder
-        os.makedirs(save_directory, exist_ok=True)
+        try:
+            os.makedirs(save_directory, exist_ok=True)
+        except OSError:
+            # In serverless environments, directories will be created on demand
+            pass
         
         # Create full file path
         file_path = os.path.join(save_directory, filename)
