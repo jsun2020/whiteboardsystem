@@ -1,5 +1,4 @@
 import os
-import boto3
 import shutil
 from typing import Optional
 from werkzeug.datastructures import FileStorage
@@ -8,6 +7,13 @@ from config import Config
 import uuid
 import mimetypes
 
+# Optional AWS S3 support
+try:
+    import boto3
+    HAS_BOTO3 = True
+except ImportError:
+    HAS_BOTO3 = False
+
 class StorageService:
     def __init__(self):
         self.storage_type = Config.STORAGE_TYPE
@@ -15,12 +21,16 @@ class StorageService:
         
         # Initialize S3 client if using S3 storage
         if self.storage_type == 's3':
-            self.s3_client = boto3.client(
-                's3',
-                region_name=Config.S3_REGION,
-                aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY
-            )
+            if not HAS_BOTO3:
+                print("Warning: boto3 not available, falling back to local storage")
+                self.storage_type = 'local'
+            else:
+                self.s3_client = boto3.client(
+                    's3',
+                    region_name=Config.S3_REGION,
+                    aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY
+                )
             self.bucket_name = Config.S3_BUCKET
         
         # Ensure upload folder exists for local storage

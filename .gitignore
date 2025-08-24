@@ -96,6 +96,7 @@ temp/
 *.tmp
 Project Requirements.md
 BILLING_SYSTEM.md
+.claude
 
 # Node modules (if using any frontend build tools)
 node_modules/
