@@ -1,5 +1,4 @@
 import os
-import magic
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 from config import Config
