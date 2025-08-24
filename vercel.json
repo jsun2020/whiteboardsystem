@@ -8,6 +8,7 @@
         "maxLambdaSize": "50mb",
         "includeFiles": "templates/**",
         "excludeFiles": "*.pyc"
+	"maxDuration": 60 
       }
     }
   ],
@@ -24,10 +25,5 @@
   "env": {
     "FLASK_ENV": "production",
     "PYTHONPATH": "/var/task"
-  },
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 60
-    }
   }
 }
