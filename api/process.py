@@ -1,4 +1,3 @@
-import asyncio
 import json
 from flask import Blueprint, request, jsonify, Response, current_app
 from models.whiteboard import Whiteboard
@@ -61,7 +60,7 @@ def analyze_whiteboard():
                 image_base64 = base64.b64encode(img_file.read()).decode('utf-8')
             
             # Analyze with Doubao - pass the correct MIME type
-            analysis_result = asyncio.run(doubao_service.analyze_whiteboard(image_base64, whiteboard.mime_type))
+            analysis_result = doubao_service.analyze_whiteboard(image_base64, whiteboard.mime_type)
             
             whiteboard.update_processing_status('processing', 50)
             

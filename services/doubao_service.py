@@ -1,8 +1,7 @@
 import os
 import json
-import asyncio
-import aiohttp
-from typing import Dict, Any, AsyncGenerator
+import requests
+from typing import Dict, Any
 import base64
 import time
 from config import Config
@@ -16,7 +15,7 @@ class DoubaoService:
         if not self.api_key:
             raise ValueError("DOUBAO_API_KEY is required")
     
-    async def analyze_whiteboard(self, image_base64: str, mime_type: str = None) -> Dict[str, Any]:
+    def analyze_whiteboard(self, image_base64: str, mime_type: str = None) -> Dict[str, Any]:
         """
         Analyze whiteboard image using Doubao Vision API
         """
@@ -107,46 +106,45 @@ Be thorough and accurate. Include all visible text and structural elements."""
         }
         
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as session:
-                async with session.post(url, json=payload, headers=headers) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        content = result['choices'][0]['message']['content']
-                        
-                        # Try to parse JSON from the response
-                        try:
-                            # Extract JSON from the response (it might be wrapped in markdown)
-                            if '```json' in content:
-                                json_start = content.find('```json') + 7
-                                json_end = content.find('```', json_start)
-                                json_str = content[json_start:json_end].strip()
-                            else:
-                                json_str = content.strip()
-                            
-                            structured_data = json.loads(json_str)
-                            return structured_data
-                        except json.JSONDecodeError:
-                            # Fallback if JSON parsing fails
-                            return {
-                                "title": "Whiteboard Analysis",
-                                "sections": [{"heading": "Content", "content": content, "type": "text"}],
-                                "tables": [],
-                                "diagrams": [],
-                                "action_items": [],
-                                "key_points": [],
-                                "raw_text": content,
-                                "confidence": 0.7
-                            }
+            response = requests.post(url, json=payload, headers=headers, timeout=60)
+            if response.status_code == 200:
+                result = response.json()
+                content = result['choices'][0]['message']['content']
+                
+                # Try to parse JSON from the response
+                try:
+                    # Extract JSON from the response (it might be wrapped in markdown)
+                    if '```json' in content:
+                        json_start = content.find('```json') + 7
+                        json_end = content.find('```', json_start)
+                        json_str = content[json_start:json_end].strip()
                     else:
-                        error_text = await response.text()
-                        raise Exception(f"Doubao API error: {response.status} - {error_text}")
+                        json_str = content.strip()
+                    
+                    structured_data = json.loads(json_str)
+                    return structured_data
+                except json.JSONDecodeError:
+                    # Fallback if JSON parsing fails
+                    return {
+                        "title": "Whiteboard Analysis",
+                        "sections": [{"heading": "Content", "content": content, "type": "text"}],
+                        "tables": [],
+                        "diagrams": [],
+                        "action_items": [],
+                        "key_points": [],
+                        "raw_text": content,
+                        "confidence": 0.7
+                    }
+            else:
+                error_text = response.text
+                raise Exception(f"Doubao API error: {response.status_code} - {error_text}")
                         
-        except asyncio.TimeoutError:
+        except requests.exceptions.Timeout:
             raise Exception("Request to Doubao API timed out")
         except Exception as e:
             raise Exception(f"Failed to analyze whiteboard: {str(e)}")
     
-    async def enhance_content(self, extracted_data: Dict[str, Any]) -> Dict[str, Any]:
+    def enhance_content(self, extracted_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Second pass to enhance and structure content
         """
@@ -184,34 +182,33 @@ Maintain the original JSON structure but improve the content quality."""
         }
         
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
-                async with session.post(url, json=payload, headers=headers) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        content = result['choices'][0]['message']['content']
-                        
-                        try:
-                            if '```json' in content:
-                                json_start = content.find('```json') + 7
-                                json_end = content.find('```', json_start)
-                                json_str = content[json_start:json_end].strip()
-                            else:
-                                json_str = content.strip()
-                                
-                            enhanced_data = json.loads(json_str)
-                            return enhanced_data
-                        except json.JSONDecodeError:
-                            # Return original data if enhancement fails
-                            return extracted_data
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            if response.status_code == 200:
+                result = response.json()
+                content = result['choices'][0]['message']['content']
+                
+                try:
+                    if '```json' in content:
+                        json_start = content.find('```json') + 7
+                        json_end = content.find('```', json_start)
+                        json_str = content[json_start:json_end].strip()
                     else:
-                        # Return original data if API call fails
-                        return extracted_data
+                        json_str = content.strip()
+                        
+                    enhanced_data = json.loads(json_str)
+                    return enhanced_data
+                except json.JSONDecodeError:
+                    # Return original data if enhancement fails
+                    return extracted_data
+            else:
+                # Return original data if API call fails
+                return extracted_data
                         
         except Exception:
             # Return original data if enhancement fails
             return extracted_data
     
-    async def generate_summary(self, content: str) -> str:
+    def generate_summary(self, content: str) -> str:
         """
         Generate a concise summary of the whiteboard content
         """
@@ -239,13 +236,12 @@ Maintain the original JSON structure but improve the content quality."""
         }
         
         try:
-            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
-                async with session.post(url, json=payload, headers=headers) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result['choices'][0]['message']['content']
-                    else:
-                        return "Summary generation failed"
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+            if response.status_code == 200:
+                result = response.json()
+                return result['choices'][0]['message']['content']
+            else:
+                return "Summary generation failed"
                         
         except Exception:
             return "Summary generation failed"
@@ -256,7 +252,7 @@ Maintain the original JSON structure but improve the content quality."""
         """
         try:
             # Simple test call
-            test_result = asyncio.run(self.generate_summary("Test content"))
+            test_result = self.generate_summary("Test content")
             return "failed" not in test_result.lower()
         except Exception:
             return False
