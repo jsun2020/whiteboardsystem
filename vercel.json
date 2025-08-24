@@ -7,8 +7,8 @@
       "config": {
         "maxLambdaSize": "50mb",
         "includeFiles": "templates/**",
-        "excludeFiles": "*.pyc"
-	"maxDuration": 60 
+        "excludeFiles": "*.pyc",
+        "maxDuration": 60
       }
     }
   ],
