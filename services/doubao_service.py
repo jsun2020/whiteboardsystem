@@ -12,13 +12,26 @@ class DoubaoService:
         self.endpoint = Config.DOUBAO_ENDPOINT
         self.model_id = Config.DOUBAO_MODEL_ID
         
+        # Don't fail if API key is missing - just disable the service
         if not self.api_key:
-            raise ValueError("DOUBAO_API_KEY is required")
+            print("Warning: DOUBAO_API_KEY not configured. Analysis features will be disabled.")
     
     def analyze_whiteboard(self, image_base64: str, mime_type: str = None) -> Dict[str, Any]:
         """
         Analyze whiteboard image using Doubao Vision API
         """
+        if not self.api_key:
+            # Return a basic fallback response if API key is not configured
+            return {
+                "title": "Whiteboard Analysis",
+                "sections": [{"heading": "Content", "content": "API key not configured. Please set DOUBAO_API_KEY environment variable.", "type": "text"}],
+                "tables": [],
+                "diagrams": [],
+                "action_items": [],
+                "key_points": ["Configure DOUBAO_API_KEY to enable AI analysis"],
+                "raw_text": "API configuration required",
+                "confidence": 0.0
+            }
         # Convert PNG to JPEG if needed, as Doubao may not support PNG
         if mime_type and mime_type.lower() in ['image/png']:
             image_base64, mime_type = self._convert_png_to_jpeg(image_base64)

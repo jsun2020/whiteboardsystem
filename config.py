@@ -42,6 +42,17 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    
+    # Vercel/Serverless specific settings
+    SESSION_COOKIE_SECURE = False  # Set to True if using HTTPS
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    # Ensure SECRET_KEY is set for production
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        import secrets
+        SECRET_KEY = secrets.token_hex(32)
 
 class TestingConfig(Config):
     TESTING = True

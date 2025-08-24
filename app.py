@@ -67,6 +67,21 @@ def create_app(config_name=None):
             'version': '1.0.0'
         })
     
+    @app.route('/debug')
+    def debug():
+        """Debug route to check environment"""
+        debug_info = {
+            'flask_env': os.environ.get('FLASK_ENV'),
+            'vercel': os.environ.get('VERCEL'),
+            'database_url': 'SET' if os.environ.get('DATABASE_URL') else 'NOT SET',
+            'secret_key': 'SET' if app.config.get('SECRET_KEY') else 'NOT SET',
+            'static_folder': app.static_folder,
+            'template_folder': app.template_folder,
+            'upload_folder': app.config.get('UPLOAD_FOLDER'),
+            'config_name': config_name
+        }
+        return jsonify(debug_info)
+    
     @app.route('/uploads/<path:filename>')
     def uploaded_file(filename):
         """Serve uploaded files"""
