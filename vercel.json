@@ -2,10 +2,12 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.py",
+      "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "15mb"
+        "maxLambdaSize": "50mb",
+        "includeFiles": "templates/**",
+        "excludeFiles": "*.pyc"
       }
     }
   ],
@@ -16,7 +18,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/app.py"
+      "dest": "/api/index.py"
     }
   ],
   "env": {
@@ -24,8 +26,8 @@
     "PYTHONPATH": "/var/task"
   },
   "functions": {
-    "app.py": {
-      "maxDuration": 300
+    "api/index.py": {
+      "maxDuration": 60
     }
   }
 }
