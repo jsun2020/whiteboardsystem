@@ -133,7 +133,7 @@ def update_project(project_id):
         if 'status' in data:
             project.status = data['status']
         
-        project.updated_at = datetime.now(timezone.utc)()
+        project.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         
         return jsonify({
@@ -240,6 +240,14 @@ def get_dashboard():
         # Get recent activity for current user
         recent_whiteboards = Whiteboard.query.join(Project).filter(Project.user_id == user.id).order_by(Whiteboard.created_at.desc()).limit(5).all()
         
+        # Prepare recent projects with whiteboard counts
+        recent_projects_data = []
+        for project in recent_projects:
+            project_dict = project.to_dict()
+            # Make sure whiteboard_count is included and properly calculated
+            project_dict['whiteboard_count'] = Whiteboard.query.filter_by(project_id=project.id).count()
+            recent_projects_data.append(project_dict)
+        
         return jsonify({
             'stats': {
                 'total_projects': total_projects,
@@ -248,7 +256,7 @@ def get_dashboard():
                 'total_exports': total_exports,
                 'processing_rate': (completed_whiteboards / total_whiteboards * 100) if total_whiteboards > 0 else 0
             },
-            'recent_projects': [p.to_dict() for p in recent_projects],
+            'recent_projects': recent_projects_data,
             'recent_activity': [
                 {
                     'type': 'whiteboard_processed',

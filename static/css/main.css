@@ -567,11 +567,16 @@ body {
 .dashboard-section {
     padding: var(--space-8) var(--space-6);
     background: var(--background);
+    min-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .dashboard-container {
     max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .dashboard-header {
@@ -579,12 +584,15 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--space-8);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .dashboard-header h2 {
     font-size: var(--font-size-2xl);
     font-weight: 700;
     color: var(--text-primary);
+    margin: 0;
 }
 
 .stats-grid {
@@ -592,6 +600,8 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--space-6);
     margin-bottom: var(--space-12);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .stat-card {
@@ -602,6 +612,8 @@ body {
     display: flex;
     align-items: center;
     gap: var(--space-4);
+    min-height: 100px;
+    box-sizing: border-box;
 }
 
 .stat-icon {
@@ -639,6 +651,8 @@ body {
 .projects-list {
     display: grid;
     gap: var(--space-4);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .project-card {
@@ -651,6 +665,9 @@ body {
     align-items: center;
     cursor: pointer;
     transition: var(--transition);
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 80px;
 }
 
 .project-card:hover {

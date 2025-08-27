@@ -570,11 +570,20 @@ class WhiteboardScribe {
             });
             if (response.ok) {
                 const data = await response.json();
-                this.updateDashboardStats(data.stats);
-                this.updateRecentProjects(data.recent_projects);
+                console.log('Dashboard data loaded:', data); // Debug log
+                this.updateDashboardStats(data.stats || {});
+                this.updateRecentProjects(data.recent_projects || []);
+            } else {
+                console.error('Dashboard API error:', response.status, response.statusText);
+                // Show default empty state
+                this.updateDashboardStats({});
+                this.updateRecentProjects([]);
             }
         } catch (error) {
             console.error('Failed to load dashboard data:', error);
+            // Show default empty state
+            this.updateDashboardStats({});
+            this.updateRecentProjects([]);
         }
     }
 
@@ -587,19 +596,37 @@ class WhiteboardScribe {
 
     updateRecentProjects(projects) {
         const container = document.getElementById('recentProjectsList');
-        if (!container || !projects) return;
-
+        if (!container) {
+            console.error('recentProjectsList container not found');
+            return;
+        }
+        
+        console.log('Updating recent projects:', projects);
         container.innerHTML = '';
+        
+        if (!projects || projects.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="text-align: center; padding: 2rem; color: #6b7280;">
+                    <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                    <p>No recent projects found</p>
+                </div>
+            `;
+            return;
+        }
+
         projects.forEach(project => {
             const projectCard = document.createElement('div');
             projectCard.className = 'project-card';
             projectCard.innerHTML = `
                 <div class="project-info">
                     <h4>${project.title || 'Untitled Project'}</h4>
-                    <p>${formatDate(project.updated_at)}</p>
+                    <div class="project-meta">
+                        <span><i class="fas fa-calendar-alt"></i> ${formatDate(project.updated_at)}</span>
+                        <span><i class="fas fa-images"></i> ${project.whiteboard_count || 0} whiteboards</span>
+                    </div>
                 </div>
-                <div class="project-stats">
-                    <span>${project.whiteboard_count} whiteboards</span>
+                <div class="project-actions">
+                    <i class="fas fa-chevron-right"></i>
                 </div>
             `;
             projectCard.addEventListener('click', () => {
