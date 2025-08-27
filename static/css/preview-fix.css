@@ -1,0 +1,295 @@
+/* Preview page specific styles */
+
+.preview-page .error-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    margin: 2rem auto;
+    max-width: 500px;
+    box-shadow: var(--shadow);
+}
+
+.preview-page .error-state i {
+    font-size: 3rem;
+    color: var(--error);
+    margin-bottom: 1rem;
+}
+
+.preview-page .error-state h2 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.preview-page .error-state p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.preview-page .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.preview-page .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-secondary);
+}
+
+.preview-page .empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-tertiary);
+}
+
+/* Whiteboard cards */
+.whiteboards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.whiteboard-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.whiteboard-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.whiteboard-preview {
+    position: relative;
+    height: 200px;
+    background: var(--surface-secondary);
+}
+
+.whiteboard-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.whiteboard-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    background: var(--surface-secondary);
+}
+
+.whiteboard-placeholder i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.whiteboard-info {
+    padding: 1rem;
+}
+
+.whiteboard-info h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.whiteboard-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.whiteboard-meta .status {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+}
+
+.whiteboard-meta .status.completed {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.whiteboard-meta .status.processing {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--info);
+}
+
+.whiteboard-meta .status.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+}
+
+.whiteboard-meta .status.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+}
+
+.whiteboard-meta .confidence {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: var(--surface-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+}
+
+/* Export cards */
+.exports-list {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.export-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: var(--transition);
+}
+
+.export-card:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+.export-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.export-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.export-details h4 {
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.export-details p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.export-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Modal styles for whiteboard content */
+.whiteboard-content {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
+.whiteboard-content h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.content-section {
+    margin-bottom: 1.5rem;
+}
+
+.content-section h4 {
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.content-section p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.whiteboard-content ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.whiteboard-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+/* Loading states */
+.preview-container .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.preview-container .loading i {
+    margin-right: 0.5rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .whiteboards-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+    }
+    
+    .export-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .export-actions {
+        align-self: stretch;
+        justify-content: stretch;
+    }
+    
+    .export-actions .btn {
+        flex: 1;
+    }
+}

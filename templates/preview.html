@@ -9,6 +9,7 @@
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/themes.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/preview-fix.css') }}" rel="stylesheet">
 </head>
 <body class="theme-light preview-page">
     <!-- Header -->
@@ -152,7 +153,7 @@
 
                 <!-- Whiteboards Tab -->
                 <div class="tab-panel" id="whiteboardsPanel">
-                    <div class="whiteboards-grid" id="whiteboardsGrid">
+                    <div class="whiteboards-grid" id="whiteboardsContainer">
                         <!-- Dynamic whiteboard cards -->
                     </div>
                 </div>
@@ -228,7 +229,7 @@
                             New Export
                         </button>
                     </div>
-                    <div class="exports-list" id="exportsList">
+                    <div class="exports-list" id="exportsContainer">
                         <!-- Dynamic exports list -->
                     </div>
                 </div>
@@ -282,20 +283,48 @@
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
     <script src="{{ url_for('static', filename='js/export.js') }}"></script>
 
     <script>
         // Initialize preview page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             const projectId = '{{ project_id }}';
             if (projectId && projectId !== 'None') {
-                PreviewApp.init(projectId);
+                try {
+                    previewApp = await PreviewApp.init(projectId);
+                } catch (error) {
+                    console.error('Failed to initialize preview app:', error);
+                    showError('Failed to load project data');
+                }
             } else {
-                showError();
+                showError('Project ID not found');
             }
         });
+        
+        // Helper functions
+        function showError(message = 'Project not found') {
+            const container = document.querySelector('.preview-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h2>Error</h2>
+                        <p>${message}</p>
+                        <div class="error-actions">
+                            <button class="btn btn-primary" onclick="window.location.reload()">
+                                <i class="fas fa-refresh"></i> Retry
+                            </button>
+                            <button class="btn btn-outline" onclick="window.location.href='/'">
+                                <i class="fas fa-home"></i> Go Home
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
     </script>
 </body>
 </html>

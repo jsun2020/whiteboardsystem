@@ -13,18 +13,47 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         token = request.headers.get('Authorization')
         if not token:
-            return jsonify({'error': 'Authentication required'}), 401
+            return jsonify({'error': 'Authentication required', 'code': 401}), 401
             
         try:
             if token.startswith('Bearer '):
                 token = token[7:]
-            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-            current_user = User.query.get(data['user_id'])
-            if not current_user or not current_user.is_active:
-                return jsonify({'error': 'Invalid token'}), 401
+                
+            # Check if SECRET_KEY exists
+            secret_key = current_app.config.get('SECRET_KEY')
+            if not secret_key:
+                print("ERROR: SECRET_KEY not configured")
+                return jsonify({'error': 'Server configuration error', 'code': 500}), 500
+                
+            # Decode JWT token
+            data = jwt.decode(token, secret_key, algorithms=['HS256'])
+            user_id = data.get('user_id')
+            
+            if not user_id:
+                print("ERROR: No user_id in token")
+                return jsonify({'error': 'Invalid token format', 'code': 401}), 401
+                
+            # Get user from database
+            current_user = User.query.get(user_id)
+            if not current_user:
+                print(f"ERROR: User not found: {user_id}")
+                return jsonify({'error': 'User not found', 'code': 401}), 401
+                
+            if not current_user.is_active:
+                print(f"ERROR: User inactive: {user_id}")
+                return jsonify({'error': 'User account inactive', 'code': 401}), 401
+                
             request.current_user = current_user
-        except:
-            return jsonify({'error': 'Invalid token'}), 401
+            
+        except jwt.ExpiredSignatureError:
+            print("ERROR: JWT token expired")
+            return jsonify({'error': 'Token expired', 'code': 401}), 401
+        except jwt.InvalidTokenError as e:
+            print(f"ERROR: Invalid JWT token: {e}")
+            return jsonify({'error': 'Invalid token', 'code': 401}), 401
+        except Exception as e:
+            print(f"ERROR: Authentication error: {e}")
+            return jsonify({'error': 'Authentication failed', 'code': 500}), 500
             
         return f(*args, **kwargs)
     return decorated_function

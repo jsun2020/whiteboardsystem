@@ -91,11 +91,17 @@ def create_project():
 def get_project(project_id):
     try:
         user = request.current_user
-        project = Project.query.get_or_404(project_id)
+        print(f"DEBUG: Getting project {project_id} for user {user.id}")
+        
+        project = Project.query.get(project_id)
+        if not project:
+            print(f"ERROR: Project not found: {project_id}")
+            return jsonify({'error': 'Project not found', 'code': 404}), 404
         
         # Verify project belongs to current user
         if project.user_id != user.id:
-            return jsonify({'error': 'Access denied'}), 403
+            print(f"ERROR: Access denied. Project user_id: {project.user_id}, Current user: {user.id}")
+            return jsonify({'error': 'Access denied', 'code': 403}), 403
         
         project_data = project.to_dict()
         
@@ -112,7 +118,8 @@ def get_project(project_id):
         return jsonify(project_data)
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"ERROR: Exception in get_project: {e}")
+        return jsonify({'error': str(e), 'code': 500}), 500
 
 @workspace_bp.route('/projects/<project_id>', methods=['PUT'])
 @login_required
