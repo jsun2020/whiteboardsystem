@@ -59,15 +59,11 @@ def require_admin(f):
                 return jsonify({
                     'success': False,
                     'error': 'Admin access required',
-                    'redirect': '/login'
+                    'redirect': '/'
                 }), 403
             else:
-                # For web pages, try to redirect to login
-                try:
-                    return redirect(url_for('login'))
-                except:
-                    # If login route doesn't exist, redirect to root
-                    return redirect('/login')
+                # For web pages, redirect to home page (no standalone login)
+                return redirect('/')
         return f(*args, **kwargs)
     return decorated_function
 

@@ -244,7 +244,7 @@
                 
                 if (!data.success || !data.user.is_authenticated || !data.user.is_admin) {
                     // Redirect to login if not authenticated or not admin
-                    window.location.href = '/login';
+                    window.location.href = '/';
                     return false;
                 }
                 
@@ -254,7 +254,7 @@
                 return true;
             } catch (error) {
                 console.error('Auth check failed:', error);
-                window.location.href = '/login';
+                window.location.href = '/';
                 return false;
             }
         }
@@ -533,14 +533,14 @@ Success Rate: ${data.data.statistics.success_rates.upload_success_rate}%`);
                 const data = await response.json();
                 
                 if (data.success) {
-                    window.location.href = '/login';
+                    window.location.href = '/';
                 } else {
                     alert('Logout failed');
                 }
             } catch (error) {
                 console.error('Logout error:', error);
                 // Force redirect even if logout fails
-                window.location.href = '/login';
+                window.location.href = '/';
             }
         }
 

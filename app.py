@@ -82,9 +82,6 @@ def create_app(config_name=None):
             return render_template('admin_statistics.html')
         return _admin_stats()
     
-    @app.route('/login')
-    def login():
-        return render_template('login.html')
     
     @app.route('/api/auth/login', methods=['POST'])
     def api_login():
