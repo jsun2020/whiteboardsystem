@@ -39,6 +39,7 @@ def verify_user_credentials(email, password):
             "theme_preference": "light",
             "last_active": datetime.now(timezone.utc).isoformat(),
             "created_at": "2025-08-24T10:09:43.648263" if is_admin(email) else datetime.now(timezone.utc).isoformat(),
+            "is_authenticated": True,
             "authenticated": True
         }
         

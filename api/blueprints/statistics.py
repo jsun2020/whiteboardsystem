@@ -37,15 +37,31 @@ def get_mock_user_stats():
 
 def get_mock_admin_stats():
     return {
-        'overview': {
-            'total_users': 125,
-            'active_users_today': 8,
-            'total_projects': 450,
-            'projects_created_today': 3,
-            'total_whiteboards': 890,
-            'whiteboards_uploaded_today': 12,
-            'total_exports': 1250,
-            'exports_generated_today': 15
+        'users': {
+            'total': 125,
+            'new_today': 3,
+            'active_today': 8
+        },
+        'whiteboards': {
+            'total': 890,
+            'processed_today': 12,
+            'successful_today': 11,
+            'failed_today': 1
+        },
+        'exports': {
+            'total': 1250,
+            'today': 15,
+            'popular_format': 'markdown'
+        },
+        'performance': {
+            'average_processing_time': 2.3,
+            'total_storage_gb': 12.4
+        },
+        'format_distribution': {
+            'markdown': 45,
+            'pptx': 30,
+            'mindmap': 15,
+            'notion': 10
         }
     }
 

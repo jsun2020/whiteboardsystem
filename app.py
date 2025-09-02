@@ -125,6 +125,7 @@ def create_app(config_name=None):
             return jsonify({
                 'success': True,
                 'user': {
+                    'is_authenticated': False,
                     'authenticated': False,
                     'is_admin': False
                 }
@@ -140,6 +141,7 @@ def create_app(config_name=None):
             "display_name": "jason" if is_admin(email) else (email.split('@')[0] if email else ''),
             "is_admin": is_admin(email),
             "is_active": True,
+            "is_authenticated": True,
             "authenticated": True,
             "can_use_service": True,
             "projects_created": 25 if is_admin(email) else 0,
