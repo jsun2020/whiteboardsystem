@@ -112,19 +112,8 @@ def create_app(config_name=None):
 
     @app.route('/api/whiteboard/image/<whiteboard_id>')
     def whiteboard_image(whiteboard_id):
-        """Serve whiteboard image by whiteboard ID"""
-        from models.whiteboard import Whiteboard
-        import os
-        
-        whiteboard = Whiteboard.query.get_or_404(whiteboard_id)
-        
-        # Use processed image if available, otherwise original
-        image_path = whiteboard.processed_path or whiteboard.original_path
-        
-        if image_path and os.path.exists(image_path):
-            return send_file(image_path)
-        else:
-            return jsonify({'error': 'Image not found'}), 404
+        """Serve whiteboard image by whiteboard ID - Mock implementation"""
+        return jsonify({'error': 'Whiteboard image serving not implemented yet'}), 404
     
     return app
 
