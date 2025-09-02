@@ -1,38 +1,42 @@
 // Authentication Management
 class AuthManager {
     constructor() {
-        this.token = localStorage.getItem('auth_token');
         this.user = null;
         this.init();
     }
 
     async init() {
-        if (this.token) {
-            await this.loadUserProfile();
-        }
+        // Always check for session-based authentication
+        await this.loadUserProfile();
         this.updateUI();
     }
 
     async loadUserProfile() {
         try {
-            const response = await fetch('/api/auth/profile', {
+            const response = await fetch('/api/auth/status', {
+                method: 'GET',
+                credentials: 'same-origin', // Include cookies for session auth
                 headers: {
-                    'Authorization': `Bearer ${this.token}`,
                     'Content-Type': 'application/json'
                 }
             });
 
             if (response.ok) {
                 const data = await response.json();
-                this.user = data.user;
-                return true;
+                if (data.success && data.user && data.user.authenticated) {
+                    this.user = data.user;
+                    return true;
+                } else {
+                    this.user = null;
+                    return false;
+                }
             } else {
-                this.logout();
+                this.user = null;
                 return false;
             }
         } catch (error) {
             console.error('Error loading user profile:', error);
-            this.logout();
+            this.user = null;
             return false;
         }
     }
@@ -153,7 +157,13 @@ class AuthManager {
     }
 
     showAdminAccess() {
-        // Add admin button to header if not already present
+        // Show the admin panel button that's already in the HTML
+        const adminPanelBtn = document.getElementById('adminPanelBtn');
+        if (adminPanelBtn) {
+            adminPanelBtn.style.display = 'inline-flex';
+        }
+        
+        // Legacy: Also add admin button to header if not already present (for backwards compatibility)
         const userActions = document.getElementById('userActions');
         if (userActions && !document.getElementById('adminButton')) {
             const adminButton = document.createElement('button');

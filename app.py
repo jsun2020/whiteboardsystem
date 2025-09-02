@@ -39,14 +39,14 @@ def create_app(config_name=None):
     from api.process import process_bp
     from api.export import export_bp
     from api.workspace import workspace_bp
-    from api.auth import auth_bp
+    # from api.auth import auth_bp  # Using direct auth implementation instead
     from api.blueprints.statistics import statistics_bp
     
     app.register_blueprint(upload_bp, url_prefix='/api')
     app.register_blueprint(process_bp, url_prefix='/api')
     app.register_blueprint(export_bp, url_prefix='/api')
     app.register_blueprint(workspace_bp, url_prefix='/api')
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    # app.register_blueprint(auth_bp, url_prefix='/api/auth')  # Using direct auth implementation instead
     app.register_blueprint(statistics_bp, url_prefix='/api/stats')
     
     # Main routes
@@ -62,15 +62,19 @@ def create_app(config_name=None):
     def share(share_id):
         return render_template('share.html', share_id=share_id)
     
-    @app.route('/admin')
-    def admin_dashboard():
-        return render_template('admin.html')
+    @app.route('/admin-panel')
+    def admin_panel():
+        from auth_middleware import require_admin
+        @require_admin
+        def _admin_panel():
+            return render_template('admin.html')
+        return _admin_panel()
     
     @app.route('/statistics')
     def user_statistics():
         return render_template('statistics.html')
     
-    @app.route('/admin/statistics')
+    @app.route('/admin-panel/statistics')
     def admin_statistics():
         from auth_middleware import require_admin
         @require_admin

@@ -65,6 +65,11 @@
                     
                     <!-- Authenticated user buttons -->
                     <div id="userActions" style="display: none;">
+                        <!-- Admin Panel link (only shown for admin users) -->
+                        <button id="adminPanelBtn" class="btn btn-ghost" onclick="window.location.href='/admin-panel/statistics'" style="display: none;" title="Admin Panel">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Admin Panel</span>
+                        </button>
                         <button class="btn btn-ghost" onclick="showSettingsModal()">
                             <i class="fas fa-cog"></i>
                             <span data-i18n="auth.setting">setting</span>
