@@ -54,14 +54,20 @@ def require_admin(f):
         # Check if user is logged in and is admin
         user_email = session.get('user_email')
         if not user_email or not is_admin(user_email):
-            if request.is_json:
+            # For API endpoints (requests expecting JSON), return JSON error
+            if request.is_json or request.path.startswith('/api/'):
                 return jsonify({
                     'success': False,
                     'error': 'Admin access required',
                     'redirect': '/login'
                 }), 403
             else:
-                return redirect(url_for('login'))
+                # For web pages, try to redirect to login
+                try:
+                    return redirect(url_for('login'))
+                except:
+                    # If login route doesn't exist, redirect to root
+                    return redirect('/login')
         return f(*args, **kwargs)
     return decorated_function
 
