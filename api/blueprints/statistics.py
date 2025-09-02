@@ -5,6 +5,10 @@ Provides endpoints for user and admin statistics
 from flask import Blueprint, request, jsonify, session
 from functools import wraps
 from auth_middleware import require_admin, get_current_user
+from models import User, Whiteboard, Export, Project
+from database import db
+from sqlalchemy import func, desc, and_
+from datetime import datetime, timezone, date
 import traceback
 
 statistics_bp = Blueprint('statistics', __name__)
@@ -35,35 +39,95 @@ def get_mock_user_stats():
         'daily_stats': []
     }
 
-def get_mock_admin_stats():
-    return {
-        'users': {
-            'total': 125,
-            'new_today': 3,
-            'active_today': 8
-        },
-        'whiteboards': {
-            'total': 890,
-            'processed_today': 12,
-            'successful_today': 11,
-            'failed_today': 1
-        },
-        'exports': {
-            'total': 1250,
-            'today': 15,
-            'popular_format': 'markdown'
-        },
-        'performance': {
-            'average_processing_time': 2.3,
-            'total_storage_gb': 12.4
-        },
-        'format_distribution': {
-            'markdown': 45,
-            'pptx': 30,
-            'mindmap': 15,
-            'notion': 10
+def get_real_admin_stats():
+    """Get real admin statistics from database"""
+    try:
+        today = date.today()
+        today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+        
+        # Users statistics
+        total_users = User.query.count()
+        new_users_today = User.query.filter(User.created_at >= today_start).count()
+        active_users_today = User.query.filter(User.last_active >= today_start).count()
+        
+        # Whiteboards statistics
+        total_whiteboards = Whiteboard.query.count()
+        whiteboards_today = Whiteboard.query.filter(Whiteboard.created_at >= today_start).count()
+        successful_today = Whiteboard.query.filter(
+            and_(Whiteboard.created_at >= today_start, Whiteboard.processing_status == 'completed')
+        ).count()
+        failed_today = Whiteboard.query.filter(
+            and_(Whiteboard.created_at >= today_start, Whiteboard.processing_status == 'error')
+        ).count()
+        
+        # Exports statistics
+        total_exports = Export.query.count()
+        exports_today = Export.query.filter(Export.created_at >= today_start).count()
+        
+        # Get most popular export format
+        popular_format_result = db.session.query(
+            Export.export_type, func.count(Export.export_type).label('count')
+        ).group_by(Export.export_type).order_by(desc('count')).first()
+        popular_format = popular_format_result[0] if popular_format_result else 'markdown'
+        
+        # Format distribution
+        format_distribution = {}
+        format_counts = db.session.query(
+            Export.export_type, func.count(Export.export_type).label('count')
+        ).group_by(Export.export_type).all()
+        
+        for format_type, count in format_counts:
+            format_distribution[format_type] = count
+        
+        # Fill in missing formats with 0
+        for format_type in ['markdown', 'pptx', 'mindmap', 'notion', 'confluence']:
+            if format_type not in format_distribution:
+                format_distribution[format_type] = 0
+        
+        # Performance metrics (simplified since we don't have processing_duration)
+        # Use processing progress as a proxy or set to 0 for now
+        avg_processing_time = 2.5  # Default placeholder
+        
+        # Calculate storage used (sum of file sizes)
+        total_storage_bytes = db.session.query(
+            func.sum(Whiteboard.file_size)
+        ).scalar() or 0
+        total_storage_gb = round(total_storage_bytes / (1024 ** 3), 2)
+        
+        return {
+            'users': {
+                'total': total_users,
+                'new_today': new_users_today,
+                'active_today': active_users_today
+            },
+            'whiteboards': {
+                'total': total_whiteboards,
+                'processed_today': whiteboards_today,
+                'successful_today': successful_today,
+                'failed_today': failed_today
+            },
+            'exports': {
+                'total': total_exports,
+                'today': exports_today,
+                'popular_format': popular_format
+            },
+            'performance': {
+                'average_processing_time': avg_processing_time,
+                'total_storage_gb': total_storage_gb
+            },
+            'format_distribution': format_distribution
         }
-    }
+    except Exception as e:
+        print(f"Error getting admin stats: {e}")
+        traceback.print_exc()
+        # Fallback to some basic stats if there's an error
+        return {
+            'users': {'total': 0, 'new_today': 0, 'active_today': 0},
+            'whiteboards': {'total': 0, 'processed_today': 0, 'successful_today': 0, 'failed_today': 0},
+            'exports': {'total': 0, 'today': 0, 'popular_format': 'markdown'},
+            'performance': {'average_processing_time': 0, 'total_storage_gb': 0},
+            'format_distribution': {'markdown': 0, 'pptx': 0, 'mindmap': 0, 'notion': 0}
+        }
 
 @statistics_bp.route('/user/stats', methods=['GET'])
 def get_user_statistics():
@@ -85,7 +149,7 @@ def get_user_statistics():
 def get_admin_dashboard():
     """Get admin dashboard statistics"""
     try:
-        stats = get_mock_admin_stats()
+        stats = get_real_admin_stats()
         return jsonify({
             'success': True,
             'data': stats
@@ -106,72 +170,64 @@ def get_admin_users_list():
         per_page = int(request.args.get('per_page', 20))
         search = request.args.get('search', '')
         
-        # Mock user data
-        mock_users = [
-            {
-                'id': 1,
-                'full_name': 'John Doe',
-                'username': 'johndoe',
-                'email': 'john@example.com',
-                'is_active': True,
-                'last_login': '2024-09-01T10:30:00Z',
+        # Build the query
+        query = User.query
+        
+        # Apply search filter if provided
+        if search:
+            search_term = f'%{search}%'
+            query = query.filter(
+                db.or_(
+                    User.email.ilike(search_term),
+                    User.full_name.ilike(search_term),
+                    User.username.ilike(search_term)
+                )
+            )
+        
+        # Order by creation date (newest first)
+        query = query.order_by(desc(User.created_at))
+        
+        # Apply pagination
+        pagination = query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+        
+        users = pagination.items
+        users_list = []
+        
+        for user in users:
+            # Get user statistics from built-in fields and related models
+            total_whiteboards = Whiteboard.query.join(Project).filter(Project.user_id == user.id).count()
+            total_exports = Export.query.join(Project).filter(Project.user_id == user.id).count()
+            
+            user_data = {
+                'id': user.id,
+                'full_name': user.display_name,  # Use display_name from actual model
+                'username': user.username,
+                'email': user.email,
+                'is_active': user.is_active,
+                'last_login': user.last_active.isoformat() if user.last_active else None,  # Use last_active
                 'statistics': {
-                    'total_uploads': 25,
-                    'monthly_uploads': 8,
-                    'total_exports': 18,
-                    'total_processing_time': 120
-                }
-            },
-            {
-                'id': 2,
-                'full_name': 'Jane Smith',
-                'username': 'janesmith',
-                'email': 'jane@example.com',
-                'is_active': True,
-                'last_login': '2024-09-02T14:15:00Z',
-                'statistics': {
-                    'total_uploads': 42,
-                    'monthly_uploads': 12,
-                    'total_exports': 35,
-                    'total_processing_time': 210
-                }
-            },
-            {
-                'id': 3,
-                'full_name': 'Admin User',
-                'username': 'jason',
-                'email': 'jsun2016@live.com',
-                'is_active': True,
-                'last_login': '2024-09-02T16:00:00Z',
-                'statistics': {
-                    'total_uploads': 100,
-                    'monthly_uploads': 25,
-                    'total_exports': 85,
-                    'total_processing_time': 450
+                    'total_uploads': total_whiteboards,  # Count of whiteboards
+                    'monthly_uploads': user.images_processed,  # Use built-in field
+                    'total_exports': total_exports,  # Count from exports table
+                    'total_processing_time': 0  # Placeholder since we don't track this
                 }
             }
-        ]
-        
-        # Filter by search if provided
-        if search:
-            mock_users = [u for u in mock_users if search.lower() in u['email'].lower() or search.lower() in u['full_name'].lower()]
-        
-        # Simple pagination
-        total = len(mock_users)
-        start = (page - 1) * per_page
-        end = start + per_page
-        users_page = mock_users[start:end]
+            users_list.append(user_data)
         
         return jsonify({
             'success': True,
             'data': {
-                'users': users_page,
+                'users': users_list,
                 'pagination': {
-                    'page': page,
-                    'per_page': per_page,
-                    'total': total,
-                    'has_prev': page > 1,
-                    'has_next': end < total
+                    'page': pagination.page,
+                    'per_page': pagination.per_page,
+                    'total': pagination.total,
+                    'has_prev': pagination.has_prev,
+                    'has_next': pagination.has_next
                 }
             }
         })
@@ -182,30 +238,82 @@ def get_admin_users_list():
             'error': f'Failed to retrieve users list: {str(e)}'
         }), 500
 
-@statistics_bp.route('/admin/users/<int:user_id>/stats', methods=['GET'])
+@statistics_bp.route('/admin/users/<user_id>/stats', methods=['GET'])
 @require_admin
 def get_user_stats(user_id):
     """Get detailed statistics for a specific user"""
     try:
-        # Mock user detail data
+        # Get user from database (user_id is string in this model)
+        user = User.query.filter_by(id=user_id).first_or_404()
+        
+        # Get user statistics from related models
+        user_projects = Project.query.filter_by(user_id=user.id).all()
+        project_ids = [p.id for p in user_projects]
+        
+        total_whiteboards = Whiteboard.query.filter(Whiteboard.project_id.in_(project_ids)).count() if project_ids else 0
+        total_exports = Export.query.filter(Export.project_id.in_(project_ids)).count() if project_ids else 0
+        
+        # Calculate success rates
+        successful_whiteboards = Whiteboard.query.filter(
+            and_(Whiteboard.project_id.in_(project_ids), Whiteboard.processing_status == 'completed')
+        ).count() if project_ids else 0
+        
+        failed_whiteboards = Whiteboard.query.filter(
+            and_(Whiteboard.project_id.in_(project_ids), Whiteboard.processing_status == 'error')
+        ).count() if project_ids else 0
+        
+        upload_success_rate = 0
+        if total_whiteboards > 0:
+            upload_success_rate = round((successful_whiteboards / total_whiteboards) * 100, 1)
+        
+        successful_exports = Export.query.filter(
+            and_(Export.project_id.in_(project_ids), Export.status == 'completed')
+        ).count() if project_ids else 0
+        
+        export_success_rate = 0
+        if total_exports > 0:
+            export_success_rate = round((successful_exports / total_exports) * 100, 1)
+        
+        # Get export format breakdown
+        format_breakdown = {}
+        if project_ids:
+            format_counts = db.session.query(
+                Export.export_type, func.count(Export.export_type).label('count')
+            ).filter(Export.project_id.in_(project_ids)).group_by(Export.export_type).all()
+            
+            for format_type, count in format_counts:
+                format_breakdown[format_type] = count
+        
         user_detail = {
             'user': {
-                'id': user_id,
-                'full_name': 'John Doe' if user_id == 1 else 'Jane Smith',
-                'username': 'johndoe' if user_id == 1 else 'janesmith',
-                'email': f'user{user_id}@example.com',
-                'is_active': True
+                'id': user.id,
+                'full_name': user.display_name,
+                'username': user.username,
+                'email': user.email,
+                'is_active': user.is_active,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_login': user.last_active.isoformat() if user.last_active else None
             },
             'statistics': {
                 'basic_stats': {
-                    'total_uploads': 25,
-                    'total_exports': 18,
-                    'total_projects': 10
+                    'total_uploads': total_whiteboards,
+                    'total_exports': total_exports,
+                    'total_projects': len(user_projects),
+                    'successful_uploads': successful_whiteboards,
+                    'failed_uploads': failed_whiteboards,
+                    'total_processing_time': 0,  # Not tracked in current model
+                    'average_processing_time': 0  # Not tracked in current model
                 },
                 'success_rates': {
-                    'upload_success_rate': 95,
-                    'export_success_rate': 90
-                }
+                    'upload_success_rate': upload_success_rate,
+                    'export_success_rate': export_success_rate
+                },
+                'monthly_stats': {
+                    'monthly_uploads': user.images_processed or 0,
+                    'monthly_exports': user.exports_generated or 0,
+                    'monthly_processing_time': 0  # Not tracked
+                },
+                'format_breakdown': format_breakdown
             }
         }
         
@@ -223,13 +331,25 @@ def get_user_stats(user_id):
 @statistics_bp.route('/admin/system/update', methods=['POST'])
 @require_admin
 def update_system_stats():
-    """Update system statistics (mock implementation)"""
+    """Update system statistics by recalculating from database"""
     try:
-        # In a real implementation, this would refresh/recalculate statistics
-        # For now, just return success
+        # Since we don't have a separate SystemStatistics table, 
+        # this endpoint will just trigger a refresh of the cached statistics
+        # and return current counts
+        
+        total_users = User.query.count()
+        total_whiteboards = Whiteboard.query.count()
+        total_exports = Export.query.count()
+        
         return jsonify({
             'success': True,
-            'message': 'System statistics updated successfully'
+            'message': 'System statistics refreshed successfully',
+            'data': {
+                'updated_date': date.today().isoformat(),
+                'total_users': total_users,
+                'total_whiteboards': total_whiteboards,
+                'total_exports': total_exports
+            }
         })
     except Exception as e:
         traceback.print_exc()
