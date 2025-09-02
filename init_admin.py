@@ -8,7 +8,7 @@ import os
 import sys
 from app import create_app
 from database import db
-from models.user import User
+from models import User
 
 def create_admin_user(email, password, username=None, display_name=None):
     """Create an admin user"""

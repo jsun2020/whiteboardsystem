@@ -3,49 +3,67 @@ from flask import request, jsonify, session, redirect, url_for, render_template
 from datetime import datetime, timezone
 import uuid
 
-# Admin email - simple check
-ADMIN_EMAIL = 'jsun2016@live.com'
-
-def is_admin(email):
-    """Check if user is admin - simple email check"""
-    return email and email.lower().strip() == ADMIN_EMAIL.lower()
-
 def verify_user_credentials(email, password):
-    """Verify user email and password - simplified for demo"""
+    """Verify user email and password against database"""
     if not email or not password:
         return False, "Email and password are required"
     
     email = email.lower().strip()
     
-    # For this demo, any non-empty password works
-    # In production, you'd verify against a real database
-    if password.strip():
-        user_data = {
-            "id": str(uuid.uuid4()),
-            "email": email,
-            "username": email.split('@')[0],
-            "display_name": "jason" if is_admin(email) else email.split('@')[0],
-            "is_admin": is_admin(email),
-            "is_active": True,
-            "can_use_service": True,
-            "projects_created": 25 if is_admin(email) else 0,
-            "images_processed": 25 if is_admin(email) else 0,
-            "exports_generated": 2 if is_admin(email) else 0,
-            "free_uses_count": 11 if is_admin(email) else 0,
-            "subscription_type": "free",
-            "subscription_expires_at": None,
-            "payment_status": "none",
-            "preferred_language": "zh-CN" if is_admin(email) else "en",
-            "theme_preference": "light",
-            "last_active": datetime.now(timezone.utc).isoformat(),
-            "created_at": "2025-08-24T10:09:43.648263" if is_admin(email) else datetime.now(timezone.utc).isoformat(),
-            "is_authenticated": True,
-            "authenticated": True
-        }
-        
-        return True, user_data
+    # Import here to avoid circular imports
+    from models import User
+    from database import db
     
-    return False, "Password is required"
+    # Look up user in database
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return False, "Invalid email or password"
+    
+    # Check password using the User model's check_password method
+    if not user.check_password(password):
+        return False, "Invalid email or password"
+    
+    # Update last active timestamp
+    user.last_active = datetime.now(timezone.utc)
+    try:
+        db.session.commit()
+    except:
+        db.session.rollback()
+    
+    # Return real user data from database
+    user_data = {
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "display_name": user.display_name or user.username,
+        "is_admin": user.is_admin,
+        "is_active": user.is_active,
+        "can_use_service": user.can_use_service(),
+        "projects_created": user.projects_created,
+        "images_processed": user.images_processed,
+        "exports_generated": user.exports_generated,
+        "free_uses_count": user.free_uses_count,
+        "subscription_type": user.subscription_type,
+        "subscription_expires_at": user.subscription_expires_at.isoformat() if user.subscription_expires_at else None,
+        "payment_status": user.payment_status,
+        "preferred_language": user.preferred_language,
+        "theme_preference": user.theme_preference,
+        "last_active": user.last_active.isoformat() if user.last_active else None,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "is_authenticated": True,
+        "authenticated": True
+    }
+    
+    return True, user_data
+
+def is_admin(email):
+    """Check if user is admin by looking up in database"""
+    if not email:
+        return False
+        
+    from models import User
+    user = User.query.filter_by(email=email.lower().strip()).first()
+    return user.is_admin if user else False
 
 def require_admin(f):
     """Decorator to require admin access"""

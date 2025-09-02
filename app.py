@@ -83,6 +83,88 @@ def create_app(config_name=None):
         return _admin_stats()
     
     
+    @app.route('/api/auth/register', methods=['POST'])
+    def api_register():
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        username = data.get('username', '').strip()
+        display_name = data.get('display_name', '').strip()
+        password = data.get('password', '')
+        
+        if not email or not password:
+            return jsonify({
+                'success': False,
+                'error': 'Email and password are required'
+            }), 400
+        
+        if len(password) < 6:
+            return jsonify({
+                'success': False,
+                'error': 'Password must be at least 6 characters long'
+            }), 400
+        
+        from models import User
+        from database import db
+        
+        # Check if user already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({
+                'success': False,
+                'error': 'An account with this email already exists'
+            }), 400
+        
+        # Create new user
+        new_user = User()
+        new_user.email = email
+        new_user.username = username or email.split('@')[0]
+        new_user.display_name = display_name or new_user.username
+        new_user.set_password(password)
+        
+        # Set admin status for the specific admin email
+        if email == 'jsun2016@live.com':
+            new_user.is_admin = True
+        
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            
+            # Auto-login the user after registration
+            session['user_email'] = new_user.email
+            session['is_admin'] = new_user.is_admin
+            session['user_id'] = new_user.id
+            
+            # Return user data
+            user_data = {
+                "id": new_user.id,
+                "email": new_user.email,
+                "username": new_user.username,
+                "display_name": new_user.display_name,
+                "is_admin": new_user.is_admin,
+                "is_active": new_user.is_active,
+                "can_use_service": new_user.can_use_service(),
+                "projects_created": new_user.projects_created,
+                "images_processed": new_user.images_processed,
+                "exports_generated": new_user.exports_generated,
+                "free_uses_count": new_user.free_uses_count,
+                "subscription_type": new_user.subscription_type,
+                "is_authenticated": True,
+                "authenticated": True
+            }
+            
+            return jsonify({
+                'success': True,
+                'user': user_data,
+                'message': 'Account created successfully'
+            })
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'error': 'Failed to create account. Please try again.'
+            }), 500
+
     @app.route('/api/auth/login', methods=['POST'])
     def api_login():
         data = request.get_json()
@@ -128,30 +210,45 @@ def create_app(config_name=None):
                 }
             })
         
-        # Return user info from session - reconstruct user object
-        from auth_middleware import is_admin
+        # Get user data from database
         email = session.get('user_email')
+        from models import User
+        
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # User not found in database, clear session
+            session.clear()
+            return jsonify({
+                'success': True,
+                'user': {
+                    'is_authenticated': False,
+                    'authenticated': False,
+                    'is_admin': False
+                }
+            })
+        
+        # Return real user data from database
         user_data = {
-            "id": session.get('user_id', str(uuid.uuid4())),
-            "email": email,
-            "username": email.split('@')[0] if email else '',
-            "display_name": "jason" if is_admin(email) else (email.split('@')[0] if email else ''),
-            "is_admin": is_admin(email),
-            "is_active": True,
+            "id": user.id,
+            "email": user.email,
+            "username": user.username,
+            "display_name": user.display_name or user.username,
+            "is_admin": user.is_admin,
+            "is_active": user.is_active,
             "is_authenticated": True,
             "authenticated": True,
-            "can_use_service": True,
-            "projects_created": 25 if is_admin(email) else 0,
-            "images_processed": 25 if is_admin(email) else 0,
-            "exports_generated": 2 if is_admin(email) else 0,
-            "free_uses_count": 11 if is_admin(email) else 0,
-            "subscription_type": "free",
-            "subscription_expires_at": None,
-            "payment_status": "none",
-            "preferred_language": "zh-CN" if is_admin(email) else "en",
-            "theme_preference": "light",
-            "last_active": datetime.now(timezone.utc).isoformat(),
-            "created_at": "2025-08-24T10:09:43.648263" if is_admin(email) else datetime.now(timezone.utc).isoformat()
+            "can_use_service": user.can_use_service(),
+            "projects_created": user.projects_created,
+            "images_processed": user.images_processed,
+            "exports_generated": user.exports_generated,
+            "free_uses_count": user.free_uses_count,
+            "subscription_type": user.subscription_type,
+            "subscription_expires_at": user.subscription_expires_at.isoformat() if user.subscription_expires_at else None,
+            "payment_status": user.payment_status,
+            "preferred_language": user.preferred_language,
+            "theme_preference": user.theme_preference,
+            "last_active": user.last_active.isoformat() if user.last_active else None,
+            "created_at": user.created_at.isoformat() if user.created_at else None
         }
         
         return jsonify({
