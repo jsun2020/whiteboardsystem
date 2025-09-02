@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics - Whiteboard Scribe</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: transform 0.2s ease-in-out;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-chart-bar mr-3 text-blue-600"></i>
+                        Statistics Dashboard
+                    </h1>
+                    <p class="text-gray-600">Monitor your whiteboard processing activity</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="refreshBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="loading mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading your statistics...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle mr-3"></i>
+                <span id="errorMessage">Failed to load statistics</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="hidden">
+            <!-- Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Total Uploads</p>
+                            <p id="totalUploads" class="text-3xl font-bold text-white">-</p>
+                        </div>
+                        <i class="fas fa-upload text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="uploadSuccessRate" class="text-white/80 text-sm">- % success rate</span>
+                    </div>
+                </div>
+
+                <div class="stat-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Total Exports</p>
+                            <p id="totalExports" class="text-3xl font-bold text-white">-</p>
+                        </div>
+                        <i class="fas fa-download text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="monthlyExports" class="text-white/80 text-sm">- this month</span>
+                    </div>
+                </div>
+
+                <div class="stat-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Processing Time</p>
+                            <p id="avgProcessingTime" class="text-3xl font-bold text-white">-</p>
+                        </div>
+                        <i class="fas fa-clock text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="totalProcessingTime" class="text-white/80 text-sm">- total</span>
+                    </div>
+                </div>
+
+                <div class="stat-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Storage Used</p>
+                            <p id="storageUsed" class="text-3xl font-bold text-white">-</p>
+                        </div>
+                        <i class="fas fa-hdd text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="avgFileSize" class="text-white/80 text-sm">- avg file size</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Usage Trends Chart -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                        Usage Trends (Last 30 Days)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="trendsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Export Formats Distribution -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-pie mr-2 text-green-600"></i>
+                        Export Formats
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="formatsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Pattern -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-chart-bar mr-2 text-purple-600"></i>
+                    Activity Pattern (Hourly)
+                </h3>
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Activity Summary -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-history mr-2 text-orange-600"></i>
+                        Recent Activity
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center py-2 border-b">
+                            <span class="text-gray-600">Whiteboards (30 days)</span>
+                            <span id="recentWhiteboards" class="font-semibold text-gray-800">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b">
+                            <span class="text-gray-600">Exports (30 days)</span>
+                            <span id="recentExports" class="font-semibold text-gray-800">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600">Most Active Day</span>
+                            <span id="mostActiveDay" class="font-semibold text-gray-800 capitalize">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-trophy mr-2 text-yellow-600"></i>
+                        Achievement Stats
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center py-2 border-b">
+                            <span class="text-gray-600">Success Rate</span>
+                            <span id="overallSuccessRate" class="font-semibold text-green-600">-%</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b">
+                            <span class="text-gray-600">Monthly Usage</span>
+                            <span id="monthlyUsage" class="font-semibold text-blue-600">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600">Preferred Language</span>
+                            <span id="preferredLanguage" class="font-semibold text-purple-600 uppercase">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let trendsChart, formatsChart, activityChart;
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+            
+            // Refresh button event
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                loadStatistics();
+            });
+        });
+
+        async function loadStatistics() {
+            showLoading();
+            try {
+                // Load user statistics
+                const statsResponse = await fetch('/api/statistics/user/stats');
+                const statsData = await statsResponse.json();
+                
+                if (!statsData.success) {
+                    throw new Error(statsData.error);
+                }
+
+                // Load usage trends
+                const trendsResponse = await fetch('/api/statistics/user/trends?days=30');
+                const trendsData = await trendsResponse.json();
+                
+                if (!trendsData.success) {
+                    throw new Error(trendsData.error);
+                }
+
+                // Update UI
+                updateStatisticsUI(statsData.data, trendsData.data);
+                showMainContent();
+                
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                showError(error.message);
+            }
+        }
+
+        function updateStatisticsUI(stats, trends) {
+            const basicStats = stats.basic_stats;
+            const successRates = stats.success_rates;
+            const recentActivity = stats.recent_activity;
+            const storageUsage = stats.storage_usage;
+
+            // Update overview cards
+            document.getElementById('totalUploads').textContent = basicStats.total_uploads || 0;
+            document.getElementById('uploadSuccessRate').textContent = `${successRates.upload_success_rate}% success rate`;
+            
+            document.getElementById('totalExports').textContent = basicStats.total_exports || 0;
+            document.getElementById('monthlyExports').textContent = `${basicStats.monthly_exports || 0} this month`;
+            
+            document.getElementById('avgProcessingTime').textContent = `${basicStats.average_processing_time || 0}s`;
+            document.getElementById('totalProcessingTime').textContent = `${Math.round((basicStats.total_processing_time || 0) / 60)}m total`;
+            
+            document.getElementById('storageUsed').textContent = `${storageUsage.total_size_mb}MB`;
+            document.getElementById('avgFileSize').textContent = `${storageUsage.average_file_size_mb}MB avg`;
+
+            // Update recent activity
+            document.getElementById('recentWhiteboards').textContent = recentActivity.whiteboards_last_30_days || 0;
+            document.getElementById('recentExports').textContent = recentActivity.exports_last_30_days || 0;
+            document.getElementById('mostActiveDay').textContent = basicStats.most_active_day || 'N/A';
+            document.getElementById('overallSuccessRate').textContent = `${successRates.process_success_rate}%`;
+            document.getElementById('monthlyUsage').textContent = `${basicStats.monthly_uploads || 0} uploads`;
+            document.getElementById('preferredLanguage').textContent = basicStats.preferred_language || 'N/A';
+
+            // Update charts
+            updateTrendsChart(trends);
+            updateFormatsChart(basicStats.exports_by_format);
+            updateActivityChart(trends.hourly_activity);
+        }
+
+        function updateTrendsChart(trends) {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            
+            if (trendsChart) {
+                trendsChart.destroy();
+            }
+
+            const dates = trends.daily_uploads.map(item => item.date);
+            const uploads = trends.daily_uploads.map(item => item.count);
+            const exports = trends.daily_exports.map(item => item.count);
+
+            trendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Uploads',
+                            data: uploads,
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Exports',
+                            data: exports,
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateFormatsChart(formatsData) {
+            const ctx = document.getElementById('formatsChart').getContext('2d');
+            
+            if (formatsChart) {
+                formatsChart.destroy();
+            }
+
+            const formats = formatsData || {};
+            const labels = Object.keys(formats);
+            const values = Object.values(formats);
+            const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+
+            formatsChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(label => label.toUpperCase()),
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateActivityChart(activityData) {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            
+            if (activityChart) {
+                activityChart.destroy();
+            }
+
+            // Create 24-hour array
+            const hours = Array.from({length: 24}, (_, i) => i);
+            const activityCounts = hours.map(hour => {
+                const activity = activityData.find(item => item.hour === hour);
+                return activity ? activity.count : 0;
+            });
+
+            activityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: hours.map(h => `${h}:00`),
+                    datasets: [{
+                        label: 'Activity',
+                        data: activityCounts,
+                        backgroundColor: 'rgba(147, 51, 234, 0.6)',
+                        borderColor: 'rgba(147, 51, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+        }
+
+        function showMainContent() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Statistics - Whiteboard Scribe</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+        .admin-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transition: transform 0.2s ease-in-out;
+        }
+        .admin-card:hover {
+            transform: translateY(-2px);
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .user-row:hover {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-shield-alt mr-3 text-red-600"></i>
+                        Admin Dashboard
+                    </h1>
+                    <p class="text-gray-600">System-wide statistics and user management</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="refreshBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    <button id="updateSystemBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-database mr-2"></i>Update System Stats
+                    </button>
+                    <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="loading mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading admin statistics...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-triangle mr-3"></i>
+                <span id="errorMessage">Failed to load admin statistics</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" class="hidden">
+            <!-- System Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="admin-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Total Users</p>
+                            <p id="totalUsers" class="text-3xl font-bold text-white">-</p>
+                        </div>
+                        <i class="fas fa-users text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="newUsersToday" class="text-white/80 text-sm">- new today</span>
+                    </div>
+                </div>
+
+                <div class="admin-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Active Users</p>
+                            <p id="activeUsersToday" class="text-3xl font-bold text-white">-</p>
+                        </div>
+                        <i class="fas fa-user-check text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="activityRate" class="text-white/80 text-sm">- % activity rate</span>
+                    </div>
+                </div>
+
+                <div class="admin-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Whiteboards</p>
+                            <p id="totalWhiteboards" class="text-3xl font-bold text-white">-</p>
+                        </div>
+                        <i class="fas fa-images text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="whiteboardsToday" class="text-white/80 text-sm">- processed today</span>
+                    </div>
+                </div>
+
+                <div class="admin-card rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-white/80 text-sm">Success Rate</p>
+                            <p id="successRate" class="text-3xl font-bold text-white">-%</p>
+                        </div>
+                        <i class="fas fa-chart-line text-white/60 text-2xl"></i>
+                    </div>
+                    <div class="mt-2">
+                        <span id="failedToday" class="text-white/80 text-sm">- failed today</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance and Usage Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-pie mr-2 text-blue-600"></i>
+                        Export Format Distribution
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="formatDistributionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-server mr-2 text-green-600"></i>
+                        System Performance
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center py-3 border-b">
+                            <span class="text-gray-600">Average Processing Time</span>
+                            <span id="avgProcessingTime" class="font-semibold text-gray-800">-s</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b">
+                            <span class="text-gray-600">Total Storage Used</span>
+                            <span id="totalStorage" class="font-semibold text-gray-800">- GB</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b">
+                            <span class="text-gray-600">Total Exports</span>
+                            <span id="totalExports" class="font-semibold text-gray-800">-</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3">
+                            <span class="text-gray-600">Most Popular Format</span>
+                            <span id="popularFormat" class="font-semibold text-purple-600 uppercase">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Management Section -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-users-cog mr-2 text-purple-600"></i>
+                        User Management
+                    </h3>
+                    <div class="flex space-x-3">
+                        <input type="text" id="userSearch" placeholder="Search users..." 
+                               class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button id="searchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Users Table -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploads</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exports</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processing Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- User rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex justify-between items-center mt-6">
+                    <div class="text-sm text-gray-700">
+                        Showing <span id="showingFrom">1</span> to <span id="showingTo">20</span> of <span id="totalUsersCount">-</span> users
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="prevPage" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-2 rounded-lg transition-colors disabled:opacity-50" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="currentPage" class="px-3 py-2 bg-blue-600 text-white rounded-lg">1</span>
+                        <button id="nextPage" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-2 rounded-lg transition-colors disabled:opacity-50" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let formatChart;
+        let currentPage = 1;
+        let currentSearch = '';
+
+        // Initialize the admin dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdminStatistics();
+            loadUsersList();
+            
+            // Event listeners
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                loadAdminStatistics();
+                loadUsersList();
+            });
+
+            document.getElementById('updateSystemBtn').addEventListener('click', updateSystemStats);
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                currentSearch = document.getElementById('userSearch').value;
+                currentPage = 1;
+                loadUsersList();
+            });
+
+            document.getElementById('userSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    currentSearch = this.value;
+                    currentPage = 1;
+                    loadUsersList();
+                }
+            });
+
+            document.getElementById('prevPage').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadUsersList();
+                }
+            });
+
+            document.getElementById('nextPage').addEventListener('click', function() {
+                currentPage++;
+                loadUsersList();
+            });
+        });
+
+        async function loadAdminStatistics() {
+            showLoading();
+            try {
+                const response = await fetch('/api/statistics/admin/dashboard');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error);
+                }
+
+                updateAdminUI(data.data);
+                showMainContent();
+                
+            } catch (error) {
+                console.error('Error loading admin statistics:', error);
+                showError(error.message);
+            }
+        }
+
+        async function loadUsersList() {
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    per_page: 20,
+                    search: currentSearch
+                });
+
+                const response = await fetch(`/api/statistics/admin/users/list?${params}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error);
+                }
+
+                updateUsersTable(data.data);
+                
+            } catch (error) {
+                console.error('Error loading users list:', error);
+            }
+        }
+
+        async function updateSystemStats() {
+            try {
+                document.getElementById('updateSystemBtn').disabled = true;
+                document.getElementById('updateSystemBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+
+                const response = await fetch('/api/statistics/admin/system/update', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error);
+                }
+
+                // Refresh statistics
+                await loadAdminStatistics();
+                
+                // Show success message
+                alert('System statistics updated successfully!');
+                
+            } catch (error) {
+                console.error('Error updating system stats:', error);
+                alert('Failed to update system statistics: ' + error.message);
+            } finally {
+                document.getElementById('updateSystemBtn').disabled = false;
+                document.getElementById('updateSystemBtn').innerHTML = '<i class="fas fa-database mr-2"></i>Update System Stats';
+            }
+        }
+
+        function updateAdminUI(stats) {
+            const users = stats.users;
+            const whiteboards = stats.whiteboards;
+            const exports = stats.exports;
+            const performance = stats.performance;
+
+            // Update overview cards
+            document.getElementById('totalUsers').textContent = users.total || 0;
+            document.getElementById('newUsersToday').textContent = `${users.new_today || 0} new today`;
+            
+            document.getElementById('activeUsersToday').textContent = users.active_today || 0;
+            const activityRate = users.total > 0 ? Math.round((users.active_today / users.total) * 100) : 0;
+            document.getElementById('activityRate').textContent = `${activityRate}% activity rate`;
+            
+            document.getElementById('totalWhiteboards').textContent = whiteboards.total || 0;
+            document.getElementById('whiteboardsToday').textContent = `${whiteboards.processed_today || 0} processed today`;
+            
+            const totalProcessed = (whiteboards.successful_today || 0) + (whiteboards.failed_today || 0);
+            const successRate = totalProcessed > 0 ? Math.round(((whiteboards.successful_today || 0) / totalProcessed) * 100) : 100;
+            document.getElementById('successRate').textContent = `${successRate}%`;
+            document.getElementById('failedToday').textContent = `${whiteboards.failed_today || 0} failed today`;
+
+            // Update performance metrics
+            document.getElementById('avgProcessingTime').textContent = `${performance.average_processing_time || 0}s`;
+            document.getElementById('totalStorage').textContent = `${performance.total_storage_gb || 0} GB`;
+            document.getElementById('totalExports').textContent = exports.total || 0;
+            document.getElementById('popularFormat').textContent = exports.popular_format || 'N/A';
+
+            // Update charts
+            updateFormatDistributionChart(stats.format_distribution);
+        }
+
+        function updateFormatDistributionChart(formatData) {
+            const ctx = document.getElementById('formatDistributionChart').getContext('2d');
+            
+            if (formatChart) {
+                formatChart.destroy();
+            }
+
+            const labels = Object.keys(formatData || {});
+            const values = Object.values(formatData || {});
+            const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+
+            formatChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(label => label.toUpperCase()),
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateUsersTable(data) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            data.users.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'user-row cursor-pointer';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-600"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${user.full_name || user.username}</div>
+                                <div class="text-sm text-gray-500">${user.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${user.statistics.total_uploads || 0}
+                        <div class="text-xs text-gray-500">${user.statistics.monthly_uploads || 0} this month</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${user.statistics.total_exports || 0}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${Math.round(user.statistics.total_processing_time || 0)}s
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="viewUserDetails(${user.id})" class="text-blue-600 hover:text-blue-900 mr-3">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="toggleUserStatus(${user.id})" class="text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-toggle-${user.is_active ? 'on' : 'off'}"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Update pagination info
+            const pagination = data.pagination;
+            document.getElementById('showingFrom').textContent = ((pagination.page - 1) * pagination.per_page) + 1;
+            document.getElementById('showingTo').textContent = Math.min(pagination.page * pagination.per_page, pagination.total);
+            document.getElementById('totalUsersCount').textContent = pagination.total;
+            document.getElementById('currentPage').textContent = pagination.page;
+
+            // Update pagination buttons
+            document.getElementById('prevPage').disabled = !pagination.has_prev;
+            document.getElementById('nextPage').disabled = !pagination.has_next;
+        }
+
+        async function viewUserDetails(userId) {
+            try {
+                const response = await fetch(`/api/statistics/admin/users/${userId}/stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // For now, just show an alert with basic info
+                    // In a real app, you'd open a modal or redirect to a detailed page
+                    const user = data.data.user;
+                    const stats = data.data.statistics.basic_stats;
+                    
+                    alert(`User Details:
+Name: ${user.full_name || user.username}
+Email: ${user.email}
+Total Uploads: ${stats.total_uploads || 0}
+Total Exports: ${stats.total_exports || 0}
+Success Rate: ${data.data.statistics.success_rates.upload_success_rate}%`);
+                }
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                alert('Failed to load user details');
+            }
+        }
+
+        function toggleUserStatus(userId) {
+            // Placeholder for user status toggle functionality
+            alert('User status toggle functionality would be implemented here');
+        }
+
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+        }
+
+        function showMainContent() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>

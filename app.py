@@ -35,12 +35,14 @@ def create_app(config_name=None):
     from api.export import export_bp
     from api.workspace import workspace_bp
     from api.auth import auth_bp
+    from api.blueprints.statistics import statistics_bp
     
     app.register_blueprint(upload_bp, url_prefix='/api')
     app.register_blueprint(process_bp, url_prefix='/api')
     app.register_blueprint(export_bp, url_prefix='/api')
     app.register_blueprint(workspace_bp, url_prefix='/api')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(statistics_bp, url_prefix='/api/stats')
     
     # Main routes
     @app.route('/')
@@ -58,6 +60,14 @@ def create_app(config_name=None):
     @app.route('/admin')
     def admin_dashboard():
         return render_template('admin.html')
+    
+    @app.route('/statistics')
+    def user_statistics():
+        return render_template('statistics.html')
+    
+    @app.route('/admin/statistics')
+    def admin_statistics():
+        return render_template('admin_statistics.html')
     
     @app.route('/health')
     def health():
