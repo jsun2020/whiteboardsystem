@@ -47,7 +47,7 @@ def create_app(config_name=None):
     app.register_blueprint(export_bp, url_prefix='/api')
     app.register_blueprint(workspace_bp, url_prefix='/api')
     # app.register_blueprint(auth_bp, url_prefix='/api/auth')  # Using direct auth implementation instead
-    app.register_blueprint(statistics_bp, url_prefix='/api/stats')
+    app.register_blueprint(statistics_bp, url_prefix='/api/statistics')
     
     # Main routes
     @app.route('/')
