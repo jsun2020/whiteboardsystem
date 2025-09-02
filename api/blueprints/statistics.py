@@ -4,6 +4,7 @@ Provides endpoints for user and admin statistics
 """
 from flask import Blueprint, request, jsonify, session
 from functools import wraps
+from auth_middleware import require_admin, get_current_user
 import traceback
 
 statistics_bp = Blueprint('statistics', __name__)
@@ -64,6 +65,7 @@ def get_user_statistics():
         }), 500
 
 @statistics_bp.route('/admin/dashboard', methods=['GET'])
+@require_admin
 def get_admin_dashboard():
     """Get admin dashboard statistics"""
     try:

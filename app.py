@@ -13,6 +13,10 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config_by_name[config_name])
     
+    # Ensure secret key is set for sessions
+    if not app.config.get('SECRET_KEY'):
+        app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
@@ -67,7 +71,76 @@ def create_app(config_name=None):
     
     @app.route('/admin/statistics')
     def admin_statistics():
-        return render_template('admin_statistics.html')
+        from auth_middleware import require_admin
+        @require_admin
+        def _admin_stats():
+            return render_template('admin_statistics.html')
+        return _admin_stats()
+    
+    @app.route('/login')
+    def login():
+        return render_template('login.html')
+    
+    @app.route('/api/auth/login', methods=['POST'])
+    def api_login():
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        
+        from auth_middleware import verify_user_credentials
+        
+        # Verify credentials properly
+        is_valid, result = verify_user_credentials(email, password)
+        
+        if is_valid:
+            session['user_email'] = result['email']
+            session['is_admin'] = result['is_admin']
+            return jsonify({
+                'success': True,
+                'user': {
+                    'email': result['email'],
+                    'is_admin': result['is_admin']
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result  # This contains the error message
+            }), 401
+    
+    @app.route('/api/auth/logout', methods=['POST'])
+    def api_logout():
+        session.clear()
+        return jsonify({'success': True})
+    
+    @app.route('/api/auth/status', methods=['GET'])
+    def api_auth_status():
+        from auth_middleware import get_current_user
+        return jsonify({
+            'success': True,
+            'user': get_current_user()
+        })
+    
+    @app.route('/api/auth/hash-password', methods=['POST'])
+    def hash_password_route():
+        """Utility route to generate password hash for admin setup - REMOVE IN PRODUCTION"""
+        data = request.get_json()
+        password = data.get('password', '')
+        
+        if not password:
+            return jsonify({
+                'success': False,
+                'error': 'Password is required'
+            }), 400
+        
+        from auth_middleware import hash_password
+        password_hash = hash_password(password)
+        
+        return jsonify({
+            'success': True,
+            'password_hash': password_hash,
+            'note': 'Use this hash in ADMIN_USERS dictionary. Remove this route in production!'
+        })
     
     @app.route('/health')
     def health():
@@ -80,6 +153,24 @@ def create_app(config_name=None):
     @app.route('/debug')
     def debug():
         """Debug route to check environment"""
+        import glob
+        
+        upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+        
+        # Find all files in upload directories
+        upload_files = []
+        try:
+            for pattern in [
+                os.path.join(upload_folder, '**/*'),
+                os.path.join('public', 'uploads', '*'),
+                'uploads/**/*',
+                'public/uploads/*'
+            ]:
+                files = glob.glob(pattern, recursive=True)
+                upload_files.extend(files)
+        except Exception as e:
+            upload_files.append(f"Error scanning: {str(e)}")
+        
         debug_info = {
             'flask_env': os.environ.get('FLASK_ENV'),
             'vercel': os.environ.get('VERCEL'),
@@ -88,7 +179,10 @@ def create_app(config_name=None):
             'static_folder': app.static_folder,
             'template_folder': app.template_folder,
             'upload_folder': app.config.get('UPLOAD_FOLDER'),
-            'config_name': config_name
+            'config_name': config_name,
+            'upload_files': upload_files,
+            'current_directory': os.getcwd(),
+            'directory_contents': os.listdir('.') if os.path.exists('.') else 'Cannot list'
         }
         return jsonify(debug_info)
     
@@ -112,8 +206,43 @@ def create_app(config_name=None):
 
     @app.route('/api/whiteboard/image/<whiteboard_id>')
     def whiteboard_image(whiteboard_id):
-        """Serve whiteboard image by whiteboard ID - Mock implementation"""
-        return jsonify({'error': 'Whiteboard image serving not implemented yet'}), 404
+        """Serve whiteboard image by whiteboard ID"""
+        import os
+        
+        # Try to find the image in various possible locations
+        possible_paths = [
+            # Check in upload folders
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'original', f'{whiteboard_id}'),
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'processed', f'{whiteboard_id}'),
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), f'{whiteboard_id}'),
+            # Check with common image extensions
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'original', f'{whiteboard_id}.jpg'),
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'original', f'{whiteboard_id}.jpeg'),
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'original', f'{whiteboard_id}.png'),
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'processed', f'{whiteboard_id}.jpg'),
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'processed', f'{whiteboard_id}.jpeg'),
+            os.path.join(app.config.get('UPLOAD_FOLDER', 'uploads'), 'processed', f'{whiteboard_id}.png'),
+            # Check in public folder
+            os.path.join('public', 'uploads', f'{whiteboard_id}.jpg'),
+            os.path.join('public', 'uploads', f'{whiteboard_id}.jpeg'),
+            os.path.join('public', 'uploads', f'{whiteboard_id}.png'),
+        ]
+        
+        # Find the first existing file
+        for path in possible_paths:
+            if os.path.exists(path):
+                try:
+                    return send_file(path)
+                except Exception as e:
+                    print(f"Error serving file {path}: {e}")
+                    continue
+        
+        # If no image found, return a placeholder or 404
+        return jsonify({
+            'error': 'Image not found',
+            'whiteboard_id': whiteboard_id,
+            'searched_paths': possible_paths
+        }), 404
     
     return app
 

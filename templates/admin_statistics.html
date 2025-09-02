@@ -61,6 +61,9 @@
                     <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
                         <i class="fas fa-home mr-2"></i>Home
                     </a>
+                    <button id="logoutBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
                 </div>
             </div>
         </div>
@@ -233,8 +236,35 @@
         let currentPage = 1;
         let currentSearch = '';
 
+        // Check authentication and admin status
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+                
+                if (!data.success || !data.user.is_authenticated || !data.user.is_admin) {
+                    // Redirect to login if not authenticated or not admin
+                    window.location.href = '/login';
+                    return false;
+                }
+                
+                // Show user info
+                const userEmail = data.user.email;
+                console.log('Logged in as admin:', userEmail);
+                return true;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
         // Initialize the admin dashboard
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check authentication first
+            const isAuthorized = await checkAuth();
+            if (!isAuthorized) return;
+            
             loadAdminStatistics();
             loadUsersList();
             
@@ -245,6 +275,7 @@
             });
 
             document.getElementById('updateSystemBtn').addEventListener('click', updateSystemStats);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('searchBtn').addEventListener('click', function() {
                 currentSearch = document.getElementById('userSearch').value;
                 currentPage = 1;
@@ -492,6 +523,25 @@ Success Rate: ${data.data.statistics.success_rates.upload_success_rate}%`);
         function toggleUserStatus(userId) {
             // Placeholder for user status toggle functionality
             alert('User status toggle functionality would be implemented here');
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '/login';
+                } else {
+                    alert('Logout failed');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Force redirect even if logout fails
+                window.location.href = '/login';
+            }
         }
 
         function showLoading() {
