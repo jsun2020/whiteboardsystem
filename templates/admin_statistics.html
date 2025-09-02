@@ -306,7 +306,7 @@
         async function loadAdminStatistics() {
             showLoading();
             try {
-                const response = await fetch('/api/stats/admin/dashboard');
+                const response = await fetch('/api/statistics/admin/dashboard');
                 const data = await response.json();
                 
                 if (!data.success) {
