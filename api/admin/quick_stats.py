@@ -1,7 +1,7 @@
 """
 Quick admin statistics endpoint using direct SQL queries
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -37,7 +37,6 @@ def get_quick_stats():
     """Get admin statistics with direct SQL queries"""
     
     # Simple session-based permission check
-    from flask import session
     user_email = session.get('user_email')
     
     if not user_email or not is_admin_user(user_email):
@@ -123,7 +122,6 @@ def get_users_list():
     """Get paginated users list with direct SQL"""
     
     # Permission check
-    from flask import session
     user_email = session.get('user_email')
     
     if not user_email or not is_admin_user(user_email):
