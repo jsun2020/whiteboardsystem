@@ -186,10 +186,14 @@ def get_users_list():
         # Format users data
         users_list = []
         for user in users:
+            # Ensure we have a display name - use display_name, username, or email prefix as fallback
+            display_name = user['display_name'] or user['username'] or user['email'].split('@')[0]
+            username = user['username'] or user['email'].split('@')[0]
+            
             users_list.append({
                 'id': user['id'],
-                'full_name': user['display_name'],
-                'username': user['username'],
+                'full_name': display_name,
+                'username': username,
                 'email': user['email'],
                 'is_active': user['is_active'],
                 'last_login': user['last_active'].isoformat() if user['last_active'] else None,

@@ -329,6 +329,8 @@
                 const response = await fetch(`/api/admin/users-list?${params}`);
                 const data = await response.json();
                 
+                console.log('Users list response:', data); // Debug log
+                
                 if (!data.success) {
                     throw new Error(data.error);
                 }
@@ -337,6 +339,8 @@
                 
             } catch (error) {
                 console.error('Error loading users list:', error);
+                // Show error in UI
+                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="6" class="text-center text-red-600 py-4">Failed to load users: ' + error.message + '</td></tr>';
             }
         }
 

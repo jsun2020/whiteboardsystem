@@ -296,27 +296,6 @@ def create_app(config_name=None):
                 'error': f'Database error: {str(e)}'
             }), 500
 
-    @app.route('/make-admin-jsun')
-    def make_admin_jsun():
-        """Simple GET route to grant admin to jsun2016@live.com - TEMPORARY"""
-        from models import User
-        from database import db
-        
-        try:
-            user = User.query.filter_by(email='jsun2016@live.com').first()
-            if not user:
-                return f"❌ User jsun2016@live.com not found"
-                
-            if user.is_admin:
-                return f"✅ User {user.email} is already an admin!"
-                
-            user.is_admin = True
-            db.session.commit()
-            
-            return f"✅ SUCCESS! Admin privileges granted to {user.email}"
-            
-        except Exception as e:
-            return f"❌ Error: {str(e)}"
 
     @app.route('/api/auth/hash-password', methods=['POST'])
     def hash_password_route():
