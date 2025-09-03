@@ -302,7 +302,9 @@
         async function loadAdminStatistics() {
             showLoading();
             try {
-                const response = await fetch('/api/admin/quick-stats');
+                const response = await fetch('/api/admin/quick-stats', {
+                    credentials: 'include'
+                });
                 const data = await response.json();
                 
                 if (!data.success) {
@@ -326,7 +328,9 @@
                     search: currentSearch
                 });
 
-                const response = await fetch(`/api/admin/users-list?${params}`);
+                const response = await fetch(`/api/admin/users-list?${params}`, {
+                    credentials: 'include'
+                });
                 const data = await response.json();
                 
                 console.log('Users list response:', data); // Debug log

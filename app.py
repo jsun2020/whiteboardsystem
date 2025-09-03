@@ -18,10 +18,16 @@ def create_app(config_name=None):
     if not app.config.get('SECRET_KEY'):
         app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
     
+    # Configure session for production/development
+    is_production = os.environ.get('VERCEL') or config_name == 'production'
+    app.config['SESSION_COOKIE_SECURE'] = is_production  # Only send over HTTPS in production
+    app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XSS
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+    
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    CORS(app, origins=app.config['CORS_ORIGINS'])
+    CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     
     # Create upload and export directories
     try:
