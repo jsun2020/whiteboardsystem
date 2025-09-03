@@ -8,39 +8,34 @@ from psycopg2.extras import RealDictCursor
 
 admin_bp = Blueprint('admin_quick', __name__)
 
-def is_admin_user(user_email):
-    """Check if user is admin by direct database query"""
+def check_admin_access():
+    """Check if current user has admin access using existing auth system"""
+    user_email = session.get('user_email')
     if not user_email:
-        return False
+        return False, "No user session found"
     
+    # Use the existing models to check admin status
     try:
-        # Connect to Vercel PostgreSQL
-        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
-        cursor = conn.cursor()
+        from models import User
+        user = User.query.filter_by(email=user_email).first()
+        if not user:
+            return False, f"User {user_email} not found"
         
-        cursor.execute("""
-            SELECT is_admin FROM users WHERE email = %s
-        """, (user_email,))
+        if not user.is_admin:
+            return False, f"User {user_email} is not an admin"
         
-        result = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        
-        return result and result[0] is True
-        
+        return True, user
     except Exception as e:
-        print(f"Admin check error: {e}")
-        return False
+        return False, f"Auth check error: {str(e)}"
 
 @admin_bp.route('/quick-stats', methods=['GET'])
 def get_quick_stats():
     """Get admin statistics with direct SQL queries"""
     
-    # Simple session-based permission check
-    user_email = session.get('user_email')
-    
-    if not user_email or not is_admin_user(user_email):
-        return jsonify({'error': 'Unauthorized'}), 401
+    # Check admin access
+    is_admin, result = check_admin_access()
+    if not is_admin:
+        return jsonify({'success': False, 'error': f'Unauthorized: {result}'}), 401
     
     try:
         # Connect to Vercel PostgreSQL
@@ -121,11 +116,10 @@ def get_quick_stats():
 def get_users_list():
     """Get paginated users list with direct SQL"""
     
-    # Permission check
-    user_email = session.get('user_email')
-    
-    if not user_email or not is_admin_user(user_email):
-        return jsonify({'error': 'Unauthorized'}), 401
+    # Check admin access
+    is_admin, result = check_admin_access()
+    if not is_admin:
+        return jsonify({'success': False, 'error': f'Unauthorized: {result}'}), 401
     
     try:
         page = int(request.args.get('page', 1))
@@ -229,6 +223,11 @@ def get_users_list():
 @admin_bp.route('/grant-admin', methods=['POST'])
 def grant_admin_privileges():
     """Grant admin privileges to jsun2016@live.com"""
+    
+    # Check admin access
+    is_admin, result = check_admin_access()
+    if not is_admin:
+        return jsonify({'success': False, 'error': f'Unauthorized: {result}'}), 401
     
     try:
         # Connect to database
