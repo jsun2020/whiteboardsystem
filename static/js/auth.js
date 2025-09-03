@@ -48,6 +48,8 @@ class AuthManager {
         const usageCount = document.getElementById('usageCount');
         const usageIndicator = document.getElementById('usageIndicator');
 
+        console.log('AuthManager.updateUI called', this.user); // Debug log
+
         if (this.user) {
             // Show user actions, hide guest actions
             if (guestActions) guestActions.style.display = 'none';
@@ -55,7 +57,9 @@ class AuthManager {
             if (userDisplayName) userDisplayName.textContent = this.user.display_name || this.user.username || 'User';
             
             // Show admin panel if user is admin
+            console.log('Checking admin status:', this.user.is_admin); // Debug log
             if (this.user.is_admin) {
+                console.log('User is admin, showing admin access'); // Debug log
                 this.showAdminAccess();
             }
             
@@ -157,25 +161,33 @@ class AuthManager {
     }
 
     showAdminAccess() {
+        console.log('showAdminAccess() called'); // Debug log
+        
         // Show the admin panel button that's already in the HTML
         const adminPanelBtn = document.getElementById('adminPanelBtn');
+        console.log('adminPanelBtn element:', adminPanelBtn); // Debug log
         if (adminPanelBtn) {
             adminPanelBtn.style.display = 'inline-flex';
+            console.log('Admin panel button shown'); // Debug log
+        } else {
+            console.log('adminPanelBtn element not found!'); // Debug log
         }
         
         // Legacy: Also add admin button to header if not already present (for backwards compatibility)
         const userActions = document.getElementById('userActions');
         if (userActions && !document.getElementById('adminButton')) {
+            console.log('Adding legacy admin button'); // Debug log
             const adminButton = document.createElement('button');
             adminButton.id = 'adminButton';
             adminButton.className = 'btn btn-ghost admin-btn';
             adminButton.title = 'Admin Panel';
-            adminButton.onclick = () => this.showAdminPanel();
+            adminButton.onclick = () => window.location.href = '/admin-panel/statistics';
             adminButton.innerHTML = '<i class="fas fa-user-shield"></i> <span>Admin</span>';
             
             // Insert before logout button
             const logoutButton = userActions.querySelector('button[onclick="handleLogout()"]');
             userActions.insertBefore(adminButton, logoutButton);
+            console.log('Legacy admin button added'); // Debug log
         }
     }
 
