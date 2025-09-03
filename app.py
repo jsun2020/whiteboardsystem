@@ -41,6 +41,7 @@ def create_app(config_name=None):
     from api.workspace import workspace_bp
     # from api.auth import auth_bp  # Using direct auth implementation instead
     from api.blueprints.statistics import statistics_bp
+    from api.admin.quick_stats import admin_bp
     
     app.register_blueprint(upload_bp, url_prefix='/api')
     app.register_blueprint(process_bp, url_prefix='/api')
@@ -48,6 +49,7 @@ def create_app(config_name=None):
     app.register_blueprint(workspace_bp, url_prefix='/api')
     # app.register_blueprint(auth_bp, url_prefix='/api/auth')  # Using direct auth implementation instead
     app.register_blueprint(statistics_bp, url_prefix='/api/statistics')
+    app.register_blueprint(admin_bp, url_prefix='/api/admin')
     
     # Main routes
     @app.route('/')
@@ -256,6 +258,55 @@ def create_app(config_name=None):
             'user': user_data
         })
     
+    @app.route('/api/auth/setup-admin', methods=['POST', 'GET'])
+    def setup_admin_route():
+        """Temporary route to set admin privileges for jsun2016@live.com - REMOVE AFTER USE"""
+        if request.method == 'GET':
+            # Allow GET request without secret for easier access
+            secret_key = 'setup-admin-2024'
+        else:
+            data = request.get_json() or {}
+            secret_key = data.get('secret_key', '')
+        
+        # Simple secret key protection
+        if secret_key != 'setup-admin-2024':
+            return jsonify({
+                'success': False,
+                'error': 'Invalid secret key'
+            }), 403
+        
+        from models import User
+        from database import db
+        
+        # Find the user and set admin privileges
+        user = User.query.filter_by(email='jsun2016@live.com').first()
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'User jsun2016@live.com not found'
+            }), 404
+        
+        # Set admin privileges
+        user.is_admin = True
+        
+        try:
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': f'Admin privileges granted to {user.email}',
+                'user': {
+                    'email': user.email,
+                    'is_admin': user.is_admin,
+                    'display_name': user.display_name
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'error': f'Database error: {str(e)}'
+            }), 500
+
     @app.route('/api/auth/hash-password', methods=['POST'])
     def hash_password_route():
         """Utility route to generate password hash for admin setup - REMOVE IN PRODUCTION"""

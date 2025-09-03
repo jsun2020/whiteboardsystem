@@ -55,9 +55,6 @@
                     <button id="refreshBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
                         <i class="fas fa-sync-alt mr-2"></i>Refresh
                     </button>
-                    <button id="updateSystemBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-database mr-2"></i>Update System Stats
-                    </button>
                     <a href="/" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
                         <i class="fas fa-home mr-2"></i>Home
                     </a>
@@ -274,7 +271,6 @@
                 loadUsersList();
             });
 
-            document.getElementById('updateSystemBtn').addEventListener('click', updateSystemStats);
             document.getElementById('logoutBtn').addEventListener('click', logout);
             document.getElementById('searchBtn').addEventListener('click', function() {
                 currentSearch = document.getElementById('userSearch').value;
@@ -306,7 +302,7 @@
         async function loadAdminStatistics() {
             showLoading();
             try {
-                const response = await fetch('/api/statistics/admin/dashboard');
+                const response = await fetch('/api/admin/quick-stats');
                 const data = await response.json();
                 
                 if (!data.success) {
@@ -330,7 +326,7 @@
                     search: currentSearch
                 });
 
-                const response = await fetch(`/api/statistics/admin/users/list?${params}`);
+                const response = await fetch(`/api/admin/users-list?${params}`);
                 const data = await response.json();
                 
                 if (!data.success) {
@@ -344,34 +340,6 @@
             }
         }
 
-        async function updateSystemStats() {
-            try {
-                document.getElementById('updateSystemBtn').disabled = true;
-                document.getElementById('updateSystemBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
-
-                const response = await fetch('/api/statistics/admin/system/update', {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error);
-                }
-
-                // Refresh statistics
-                await loadAdminStatistics();
-                
-                // Show success message
-                alert('System statistics updated successfully!');
-                
-            } catch (error) {
-                console.error('Error updating system stats:', error);
-                alert('Failed to update system statistics: ' + error.message);
-            } finally {
-                document.getElementById('updateSystemBtn').disabled = false;
-                document.getElementById('updateSystemBtn').innerHTML = '<i class="fas fa-database mr-2"></i>Update System Stats';
-            }
-        }
 
         function updateAdminUI(stats) {
             const users = stats.users;
@@ -497,27 +465,7 @@
         }
 
         async function viewUserDetails(userId) {
-            try {
-                const response = await fetch(`/api/statistics/admin/users/${userId}/stats`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    // For now, just show an alert with basic info
-                    // In a real app, you'd open a modal or redirect to a detailed page
-                    const user = data.data.user;
-                    const stats = data.data.statistics.basic_stats;
-                    
-                    alert(`User Details:
-Name: ${user.full_name || user.username}
-Email: ${user.email}
-Total Uploads: ${stats.total_uploads || 0}
-Total Exports: ${stats.total_exports || 0}
-Success Rate: ${data.data.statistics.success_rates.upload_success_rate}%`);
-                }
-            } catch (error) {
-                console.error('Error fetching user details:', error);
-                alert('Failed to load user details');
-            }
+            alert('User details view functionality will be implemented in the next version.');
         }
 
         function toggleUserStatus(userId) {
