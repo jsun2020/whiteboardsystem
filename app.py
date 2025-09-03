@@ -22,7 +22,10 @@ def create_app(config_name=None):
     is_production = os.environ.get('VERCEL') or config_name == 'production'
     app.config['SESSION_COOKIE_SECURE'] = is_production  # Only send over HTTPS in production
     app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XSS
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None' if is_production else 'Lax'  # Cross-site for production
+    app.config['SESSION_PERMANENT'] = False  # Session expires when browser closes
+    app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours if permanent
+    app.config['SESSION_COOKIE_NAME'] = 'whiteboard_session'  # Custom session name
     
     # Initialize extensions
     db.init_app(app)
@@ -141,6 +144,8 @@ def create_app(config_name=None):
             session['user_email'] = new_user.email
             session['is_admin'] = new_user.is_admin
             session['user_id'] = new_user.id
+            session.permanent = False  # Ensure session is not permanent
+            session.modified = True   # Force session to be saved
             
             # Return user data
             user_data = {
@@ -189,6 +194,8 @@ def create_app(config_name=None):
             session['user_email'] = result['email']
             session['is_admin'] = result['is_admin']
             session['user_id'] = result['id']
+            session.permanent = False  # Ensure session is not permanent
+            session.modified = True   # Force session to be saved
             
             return jsonify({
                 'success': True,
